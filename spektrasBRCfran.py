@@ -7,7 +7,7 @@ from koreleBRC import Corrcoff_2
 from scipy.special import factorial
 import os
 from numba import jit
-
+#@jit
 def spektras(ax,s0,om0,j0,T,Kvsk=2,nam='BRC/1td_test'):
     
    
@@ -369,8 +369,8 @@ def spektras(ax,s0,om0,j0,T,Kvsk=2,nam='BRC/1td_test'):
             for j in range(numG+numE):
                 if i!=j:
                     Spartos[i,j]=K_2(i, j)
-        for i in range((numG+numE,numG+numE)):
-            Spartos[i,i]=-np.sum(Spartos[i,:])       
+        for i in range(numG+numE):
+            Spartos[i,i]=-np.sum(Spartos[:,i])       
         print("spart end",datetime.datetime.now())        
         if itera==0:
             Spartos_vid=Spartos

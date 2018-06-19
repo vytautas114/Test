@@ -418,7 +418,7 @@ def Cw(te,x,T,y0):
 #            y[0]=0
             return y0
 
-#@jit
+# @jit
 def fourje2(G,A,K_,gfun2,T,miumod,CorrD,Cy,Cx,snum):
     step=0.00001
     dinh=0
@@ -468,6 +468,7 @@ def fourje2(G,A,K_,gfun2,T,miumod,CorrD,Cy,Cx,snum):
             #-np.conjugate(np.exp((-1j*(A[i]-G[j])-ddef-(K_(i+numG,i+numG)+K_(j,j))/2-1/2*dinh*tim)*tim-(gfun2(tim))*(CorrD[j,j]+CorrD[i+numG,i+numG]-CorrD[i+numG,j]-CorrD[j,i+numG])))
    # print("3")
    # print(datetime.datetime.now())
+    #rew=np.concatenate((rew,np.zeros(np.size(tim)*3)))
     ft=np.fft.fftshift(np.fft.fft(rew)) 
    # print("5")
    # print(datetime.datetime.now())
