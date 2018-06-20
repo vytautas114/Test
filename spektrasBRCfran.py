@@ -136,7 +136,7 @@ def spektras(ax,s0,om0,j0,T,Kvsk=2,nam='BRC/1td_test'):
                 H[i,j]=J[i//v2,j//v2]*Factors[virp[i%v2,i//v2],virp[j%v2,i//v2]]*Factors[virp[j%v2,j//v2],virp[i%v2,j//v2]]*(1 if np.all(virp[j%v2,nn[np.logical_and(nn!=j//v2,nn!=i//v2)]]==virp[i%v2,nn[np.logical_and(nn!=j//v2,nn!=i//v2)]]) else 0 )
     #print(H)
     np.savetxt('test.out',H,fmt='%1.2f',delimiter='      ')
-    # Fbus=rink(saitnum)
+    # Fbus=rink(saitnum)2
     
     # H_f=np.zeros([saitnum*(saitnum-1)*v2//2,saitnum*(saitnum-1)*v2//2])
     # for i in range(saitnum*(saitnum-1)*v2//2):
