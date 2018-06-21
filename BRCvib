@@ -1,0 +1,45 @@
+#!/bin/sh
+
+# for om in  190 285 340 565
+# do
+# 	for s in  0.05 0.25 0.5 
+# 	do
+# 		for t in 5  150 
+# 		do
+# 		# ./calcvibron.py $s 1400 100 $t $i #>/dev/null
+# 		# ./calcvibron.py $s 250 600 $t $i #>/dev/null
+# 		# ./calcvibron.py $s 250 100 $t $i #>/dev/null
+# 		# ./calcvibron.py $s 1400 600 $t $i #>/dev/null
+
+#         #./calcvibron.py $s 1400 0 $t $i #>/dev/null
+# 	    #./calcvibron.py $s 250 0 $t $i #>/dev/null
+# 		#./calcvibron.py $s 700 0 150 $i #>/dev/null
+# 		#./calcvibron.py $s 250 0 150 $i #>/dev/null
+# 	    ./BRCcalc.py $s 1400 $t $i #>/dev/null
+# 		./BRCcalc.py $s 250 $t $i #>/dev/null   	
+# 		done
+# 	done	
+# done
+
+
+# ./BRCcalc.py 0.016 190 104 77 2 #>/dev/null  
+# ./BRCcalc.py 0.0085 285 104 77 2
+# ./BRCcalc.py 0.0094 340 104 77 2
+# ./BRCcalc.py 0.0064 565 104 77 2
+# ./BRCcalc.py 0.009 725 104 77 2
+
+./BRCcalc.py 0.016 190 104 77 2 & #>/dev/null  
+./BRCcalc.py 0.0085 285 104 77 2 &
+./BRCcalc.py 0.0094 340 104 77 2 &
+./BRCcalc.py 0.0064 565 104 77 2 &
+./BRCcalc.py 0.009 725 104 77 2
+./BRCcalc.py 0.007 1175 104 77 2
+./BRCcalc.py 0.0046 1500 104 77 2
+
+
+# for i in  2 3 4
+# do
+	
+# 	./calcvibron.py 0.3 700 0 150 $i #>/dev/null
+	
+# done
