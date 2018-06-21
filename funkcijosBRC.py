@@ -470,7 +470,7 @@ def fourje2(G,A,K_,gfun2,T,miumod,CorrD,Cy,Cx,snum):
             if GJ[j]*miumod[i][j]/miu_max <1e-6:
                 continue
             else:
-                rew+=(np.exp((-1j*(A[i]-G[j])-ddef+(K_[i+numG,i+numG]+K_[j,j])/2-1/2*dinh*tim)*tim-np.dot(g__.T,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG]))))*miumod[i][j]*GJ[j]#bolc(G[j],G[0],T)
+                rew+=(np.exp((-1j*(A[i]-G[j])-ddef+(K_[i+numG,i+numG]+K_[j,j])/2-1/2*dinh*tim)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG]))))*miumod[i][j]*GJ[j]#bolc(G[j],G[0],T)
             #-np.conjugate(np.exp((-1j*(A[i]-G[j])-ddef-(K_(i+numG,i+numG)+K_(j,j))/2-1/2*dinh*tim)*tim-(gfun2(tim))*(CorrD[j,j]+CorrD[i+numG,i+numG]-CorrD[i+numG,j]-CorrD[j,i+numG])))
     print("2")
    # print(datetime.datetime.now())
