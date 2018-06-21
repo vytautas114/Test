@@ -445,6 +445,7 @@ def fourje2(G,A,K_,gfun2,T,miumod,CorrD,Cy,Cx,snum):
         rew=np.zeros(np.shape(tim)[0],dtype=np.complex64)
         g__3=np.zeros(np.shape(tim3)[0],dtype=np.complex64)
         g__t=np.zeros(np.shape(tim)[0],dtype=np.complex64)
+        
         for ii in range(np.size(tim3)):
              g__3[ii]=2*np.trapz(Cw(tim3[ii],x0,T,y0),x=x0)
         #      if index[0]%10==0:
