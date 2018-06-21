@@ -460,13 +460,17 @@ def fourje2(G,A,K_,gfun2,T,miumod,CorrD,Cy,Cx,snum):
     # for index, te in np.ndenumerate(tim):
     #      g__[index[0]]=2*np.trapz(Cw(te,x0),x=x0)
     #g__=gfun2(tim)
-    print("1")
+    GJ=np.zeros(numG)
+    for i in range(numG):
+        GJ[i]=bolc(G[i],G[0],T)
+    miu_max=miumod.max()    
     for i in range(numE):
         for j in range(numG):
-            if bolc(G[j],G[0],T)*miumod[i][j]/miumod.max() <1e-6:
+            #if bolc(G[j],G[0],T)*miumod[i][j]/miumod.max() <1e-6:
+            if GJ[j]*miumod[i][j]/miu_max <1e-6:
                 continue
             else:
-                rew+=(np.exp((-1j*(A[i]-G[j])-ddef+(K_(i+numG,i+numG)+K_(j,j))/2-1/2*dinh*tim)*tim-np.einsum("ij,i->j",g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG]))))*miumod[i][j]*bolc(G[j],G[0],T)
+                rew+=(np.exp((-1j*(A[i]-G[j])-ddef+(K_[i+numG,i+numG]+K_[j,j])/2-1/2*dinh*tim)*tim-np.dot(g__.T,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG]))))*miumod[i][j]*GJ[j]#bolc(G[j],G[0],T)
             #-np.conjugate(np.exp((-1j*(A[i]-G[j])-ddef-(K_(i+numG,i+numG)+K_(j,j))/2-1/2*dinh*tim)*tim-(gfun2(tim))*(CorrD[j,j]+CorrD[i+numG,i+numG]-CorrD[i+numG,j]-CorrD[j,i+numG])))
     print("2")
    # print(datetime.datetime.now())

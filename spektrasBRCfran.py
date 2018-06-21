@@ -131,7 +131,7 @@ def spektras(ax,s0,om0,j0,T,Kvsk=2,nam='BRC/1td_test'):
     H=np.zeros([saitnum*v2,saitnum*v2])
     for i in range(saitnum*v2):
         for j in range(saitnum*v2):        
-            if i==j and np.array_equal(virp[i%v2],virp[j%v2]):
+            if i==j: #and np.array_equal(virp[i%v2],virp[j%v2]):
                 H[i,j]=en[i//v2]+lemd[i//v2]#+om[0]*(1/2+virp[i%v2,0])+om[1]*(1/2+virp[i%v2,1])
                 for m in range(saitnum):
                     H[i,j]+=om[m]*(1/2+virp[i%v2,m])
@@ -236,20 +236,23 @@ def spektras(ax,s0,om0,j0,T,Kvsk=2,nam='BRC/1td_test'):
         miumod=np.zeros([saitnum*v2,v2])
         miu=np.zeros([saitnum*v2,v2,3])
         FC2=np.zeros((v2,v2,saitnum))
+        KFF=B.reshape(saitnum,v2,v2*saitnum)
         for j in range(v2):
             for i in range(v2):
                 for m in range(saitnum):
                     FC2[i,j,m]=(1 if np.all(virp[j,nn[nn!=m]]==virp[i,nn[nn!=m]]) else 0 )
-        for p in range(saitnum*v2):
-            for i in range(v2):
+        FCC=np.zeros((v2,v2,saitnum))
+        for i in range(v2):
                 for j in range(v2):
                     for m in range(saitnum):
                         
-                        #nn=np.all(nn[nn!=m]==nn[nn!=m])
-                        miu[p,i]=miu[p,i]+D[m]*B[m*v2+j%v2,p]*Factors[virp[j,m],virp[i,m]]*FC2[i,j,m]#Factors[virp[j,0],virp[i,0]]#(1 if j==i else 0 )
-                        #print(Factors[virp[j,m],virp[i,m]])
-                miumod[p,i]=np.dot(miu[p,i],miu[p,i])
-
+        #                 #nn=np.all(nn[nn!=m]==nn[nn!=m])
+        #                 #miu[p,i]=miu[p,i]+D[m]*B[m*v2+j%v2,p]*Factors[virp[j,m],virp[i,m]]*FC2[i,j,m]#Factors[virp[j,0],virp[i,0]]#(1 if j==i else 0 )
+        #                 miu[p,i]=miu[p,i]+D[m]*KFF[m,j,p]*FCC[j,i,m]*FC2[i,j,m]
+        #                 #print(Factors[virp[j,m],virp[i,m]])
+        #         #miumod[p,i]=np.dot(miu[p,i],miu[p,i])
+        miu=np.einsum("md,mjp,jim,ijm->pid",D,KFF,FCC,FC2)        
+        miumod=np.einsum("ikj,ikj->ik",miu,miu)
         # kff=B.reshape(saitnum,v2,v2*saitnum)
         # miu[p,i]=miu[p,i]+D[m]*kff[m,j,p]*Factors[virp[j,m],virp[i,m]]*FC2[i,j,m]
         # F3=np.zeros((v2,v2,saitnum))
@@ -339,13 +342,14 @@ def spektras(ax,s0,om0,j0,T,Kvsk=2,nam='BRC/1td_test'):
             tarp2=0
             temp=0
             if a==b:
+                return 0
                 kx=0
                 for i in range(numG+numE):
                     if(a!=i):
                         kx-=K_2(i,a)
                 return kx     
             if a>=numG and b>=numG and (A[a-numG]-A[b-numG]!=0):
-                tem=A[a-numG]-A[b-numG]
+                tem=A[b-numG]-A[a-numG]
                 if tem<0:
                     tarp1=-np.interp(-tem,Cx,Cy)
                     tarp2=-np.interp(-tem,Cx2,Cy2)
@@ -354,9 +358,9 @@ def spektras(ax,s0,om0,j0,T,Kvsk=2,nam='BRC/1td_test'):
                     tarp2=np.interp(tem,Cx2,Cy2)  
                 #tarp=SDFDEB(tem,50,1) 
 
-                return np.abs((tarp1*CorrOffd[0,a,b]+tarp2*CorrOffd[1,a,b])*(np.tanh((tem)/(2*T*0.695028))**(-1)-1)) #if (A[a-numG]-A[b-numG])>om[0]-1 and (A[a-numG]-A[b-numG])<om[0]+1 else 0
+                return np.abs((tarp1*CorrOffd[0,b,a]+tarp2*CorrOffd[1,b,a])*(np.tanh((tem)/(2*T*0.695028))**(-1)+1)) #if (A[a-numG]-A[b-numG])>om[0]-1 and (A[a-numG]-A[b-numG])<om[0]+1 else 0
             elif a<numG and b<numG:
-                tem=G[a]-G[b]
+                tem=G[b]-G[a]
                 if tem<0:
                     tarp1=-np.interp(-tem,Cx,Cy)
                     tarp2=-np.interp(-tem,Cx2,Cy2)
@@ -365,7 +369,7 @@ def spektras(ax,s0,om0,j0,T,Kvsk=2,nam='BRC/1td_test'):
                     tarp2=np.interp(tem,Cx2,Cy2)  
                 #tarp=SDFDEB(tem,50,1)
 
-                return np.abs((tarp1*CorrOffd[0,a,b]+tarp2*CorrOffd[1,a,b])*(np.tanh((tem)/(2*T*0.695028))**(-1)-1)) if tem!=0 else 0 #if (G[a]-G[b])>om[0]-1 #and (G[a]-G[b])<om[0]+1 else 0
+                return np.abs((tarp1*CorrOffd[0,b,a]+tarp2*CorrOffd[1,b,a])*(np.tanh((tem)/(2*T*0.695028))**(-1)+1)) if tem!=0 else 0 #if (G[a]-G[b])>om[0]-1 #and (G[a]-G[b])<om[0]+1 else 0
             else:
                 return 0
 
@@ -377,7 +381,7 @@ def spektras(ax,s0,om0,j0,T,Kvsk=2,nam='BRC/1td_test'):
                 if i!=j:
                     Spartos[i,j]=K_2(i, j)
         for i in range(numG+numE):
-            Spartos[i,i]=-np.sum(Spartos[:,i])       
+            Spartos[i,i]-=np.sum(Spartos[:,i])      
         print("spart end",datetime.datetime.now())        
         if itera==0:
             Spartos_vid=Spartos
@@ -391,7 +395,7 @@ def spektras(ax,s0,om0,j0,T,Kvsk=2,nam='BRC/1td_test'):
         #freq,ft,resp=fourje(G,A,K0,gfun2,T,miumod,CorrD,Cy,Cx)
         cxt=np.stack((Cx,Cx2))
         cyt=np.stack((Cy,Cy2))
-        freq,ft,resp=fourje2(G,A,K0,gfun2,T,miumod,CorrD,cyt,cxt,2)
+        freq,ft,resp=fourje2(G,A,Spartos,gfun2,T,miumod,CorrD,cyt,cxt,2)
         print("fft end",datetime.datetime.now())
         # ax.plot(-freq,np.real(ft)/max(np.real(ft)),'k',lw=1)#,-freq,np.imag(ft)/max(np.imag(ft)))#lenght)        
         #freq=-freq[::-1]
