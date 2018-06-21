@@ -8,7 +8,7 @@ from scipy.special import factorial
 import os
 from numba import jit
 
-os.environ['MKL_NUM_THREADS'] = '1'
+#os.environ['MKL_NUM_THREADS'] = '1'
 
 #@jit
 def spektras(ax,s0,om0,j0,T,Kvsk=2,nam='BRC/1td_test'):
@@ -245,7 +245,7 @@ def spektras(ax,s0,om0,j0,T,Kvsk=2,nam='BRC/1td_test'):
         for i in range(v2):
                 for j in range(v2):
                     for m in range(saitnum):
-                        
+                        FCC[i,j,m]=Factors[virp[j,m],virp[i,m]]
         #                 #nn=np.all(nn[nn!=m]==nn[nn!=m])
         #                 #miu[p,i]=miu[p,i]+D[m]*B[m*v2+j%v2,p]*Factors[virp[j,m],virp[i,m]]*FC2[i,j,m]#Factors[virp[j,0],virp[i,0]]#(1 if j==i else 0 )
         #                 miu[p,i]=miu[p,i]+D[m]*KFF[m,j,p]*FCC[j,i,m]*FC2[i,j,m]
