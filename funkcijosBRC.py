@@ -427,6 +427,8 @@ def Cw_return(te,x,T,y0):
     y_out=np.zeros((np.size(x),np.size(te)),dtype=np.complex64)
     for ii in range(np.size(x)):
         for jj in range(np.size(te)):
+            if x[ii]==0:
+                continue
             y_out[ii,jj]=y0[ii]/(2*np.pi*x[ii]**2)*((1+np.exp(-x[ii]/(T*0.695028)))/(1-np.exp(-x[ii]/(T*0.695028)))*(1-np.cos(x[ii]*te[jj]))+1j*np.sin(x[ii]*te[jj])-1j*x[ii]*te[jj])
             #   y[0]=0]
     return y_out
@@ -451,7 +453,7 @@ def propg(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim):
 def g33(tim3,x0,T,y0):
     g__3=np.zeros(np.shape(tim3)[0],dtype=np.complex64)
     for ii in range(np.size(tim3)):
-             g__3[ii]=2*np.trapz(Cw(tim3[ii],x0,T,y0),x=x0)
+             g__3[ii]=2*np.trapz(Cw(tim3[ii],x0[1:],T,y0[1:]),x=x0[1:])
     return g__3         
 
 @jit 
@@ -465,20 +467,20 @@ def g33_2(tim3,x0,T,y0):
 
 #@jit
 def fourje2(G,A,K_,T,miumod,CorrD,Cy,Cx,snum):
-    step=0.0001
+    step=0.00003
     numG=len(G)
     numE=len(A)
     g__=0
-    tim=np.arange(0,step*2**14,step,dtype=np.float32)
+    tim=np.arange(0,step*2**12,step,dtype=np.float32)
     tim2=np.arange(0,step*2**8,step,dtype=np.float32)
-    tim3=np.arange(step*2**8,step*2**14,2**4*step,dtype=np.float32)
+    tim3=np.arange(step*2**8,step*2**12,step*2**3,dtype=np.float32)
     tim3=np.concatenate((tim2,tim3))
    # tim3=tim
     rew=np.zeros(np.shape(tim)[0],dtype=np.complex64)
     for zz in range(snum):
         x0=Cx[zz]
         y0=Cy[zz]
-        x0[0]=0.0001
+        x0[0]=0
         y0[0]=0
         g__3=np.zeros(np.shape(tim3)[0],dtype=np.complex64)
         g__t=np.zeros(np.shape(tim)[0],dtype=np.complex64)
@@ -491,13 +493,14 @@ def fourje2(G,A,K_,T,miumod,CorrD,Cy,Cx,snum):
 
     rew=propg(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim)
     
+    rew=np.concatenate((rew,np.zeros(np.shape(tim)[0]*7,dtype=np.complex64)+rew[-1]))
     ft=np.fft.fftshift(np.fft.fft(rew)) 
     length=np.shape(rew)[0]
     freq = np.fft.fftshift(np.fft.fftfreq(length, d=step/(2*np.pi)))
     
-    plt.plot(tim,np.real(rew),tim,np.imag(rew))
-    plt.show()
-    plt.savefig("test.png")
+    #plt.plot(tim,np.imag(rew))
+    #plt.show()
+    #plt.savefig("test.png")
     print(freq[10]-freq[11],rew[-1],freq[-1])
     return freq,ft,rew
 
