@@ -8,7 +8,7 @@ from scipy.special import factorial
 import os
 from numba import jit
 
-#os.environ['MKL_NUM_THREADS'] = '1'
+os.environ['MKL_NUM_THREADS'] = '1'
 
 #@jit
 def spektras(ax,s0,om0,j0,T,Kvsk=2,nam='BRC/1td_test'):

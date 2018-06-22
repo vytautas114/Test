@@ -4,6 +4,7 @@ import numpy as np
 from itertools import product
 import datetime
 from numba import jit
+from scipy import integrate
 
 def rink(sk):
         ll=[]
@@ -410,15 +411,58 @@ def fourje(G,A,K_,gfun2,T,miumod,CorrD,Cy,Cx):
     length=np.shape(rew)[0]
     freq = np.fft.fftshift(np.fft.fftfreq(length, d=step/(2*np.pi)))
     return freq,ft,rew
-#@jit
+@jit(nopython=True)
 def Cw(te,x,T,y0):
     #np.tanh(x/(2*T*0.695028))**(-1)
-            #y=np.zeros(np.size(x0))
-            y0=y0/(2*np.pi*x**2)*((1+np.exp(-x/(T*0.695028)))/(1-np.exp(-x/(T*0.695028)))*(1-np.cos(x*te))+1j*np.sin(x*te)-1j*x*te)
-#            y[0]=0
-            return y0
+    #y=np.zeros(np.size(x0))
+    y0=y0/(2*np.pi*x**2)*((1+np.exp(-x/(T*0.695028)))/(1-np.exp(-x/(T*0.695028)))*(1-np.cos(x*te))+1j*np.sin(x*te)-1j*x*te)
+#   y[0]=0
+    return y0
+@jit
+def Cw_return(te,x,T,y0):
+    #np.tanh(x/(2*T*0.695028))**(-1)
+    #y=np.zeros(np.size(x0))
+    y_out=np.zeros((np.size(x),np.size(te)),dtype=np.complex64)
+    for ii in range(np.size(x)):
+        for jj in range(np.size(te)):
+            y_out[ii,jj]=y0[ii]/(2*np.pi*x[ii]**2)*((1+np.exp(-x[ii]/(T*0.695028)))/(1-np.exp(-x[ii]/(T*0.695028)))*(1-np.cos(x[ii]*te[jj]))+1j*np.sin(x[ii]*te[jj])-1j*x[ii]*te[jj])
+            #   y[0]=0]
+    return y_out
 
-# @jit
+
+@jit
+def propg(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim):
+    rew=np.zeros(np.shape(tim)[0],dtype=np.complex64)
+    GJ=np.zeros(numG)
+    for i in range(numG):
+        GJ[i]=bolc(G[i],G[0],T)
+    miu_max=miumod.max()    
+    for i in range(numE):
+        for j in range(numG):
+            #if bolc(G[j],G[0],T)*miumod[i][j]/miumod.max() <1e-6:
+            if GJ[j]*miumod[i][j]/miu_max <1e-6:
+                continue
+            else:
+                rew+=(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG]))))*miumod[i][j]*GJ[j]#bolc(G[j],G[0],T)
+            #-np.conjugate(np.exp((-1j*(A[i]-G[j])-ddef-(K_(i+numG,i+numG)+K_(j,j))/2-1/2*dinh*tim)*tim-(gfun2(tim))*(CorrD[j,j]+CorrD[i+numG,i+numG]-CorrD[i+numG,j]-CorrD[j,i+numG])))
+    return rew
+@jit 
+def g33(tim3,x0,T,y0):
+    g__3=np.zeros(np.shape(tim3)[0],dtype=np.complex64)
+    for ii in range(np.size(tim3)):
+             g__3[ii]=2*np.trapz(Cw(tim3[ii],x0,T,y0),x=x0)
+    return g__3         
+
+@jit 
+def g33_2(tim3,x0,T,y0):
+    cwwww=Cw_return(tim3,x0,T,y0)
+    g__3=np.zeros(np.shape(tim3)[0],dtype=np.complex64)
+    for ii in range(np.size(tim3)):
+        g__3[ii]=2*np.trapz(cwwww[ii],x=x0)
+    #g__3 = integrate.cumtrapz(cwwww, x0, initial=0)
+    return g__3  
+
+#@jit
 def fourje2(G,A,K_,gfun2,T,miumod,CorrD,Cy,Cx,snum):
     step=0.00001
     dinh=0
@@ -445,9 +489,9 @@ def fourje2(G,A,K_,gfun2,T,miumod,CorrD,Cy,Cx,snum):
         rew=np.zeros(np.shape(tim)[0],dtype=np.complex64)
         g__3=np.zeros(np.shape(tim3)[0],dtype=np.complex64)
         g__t=np.zeros(np.shape(tim)[0],dtype=np.complex64)
-        
-        for ii in range(np.size(tim3)):
-             g__3[ii]=2*np.trapz(Cw(tim3[ii],x0,T,y0),x=x0)
+        g__3=g33(tim3, x0, T, y0)
+        # for ii in range(np.size(tim3)):
+        #      g__3[ii]=2*np.trapz(Cw(tim3[ii],x0,T,y0),x=x0)
         #      if index[0]%10==0:
         #          print(index[0],g__3[index[0]],gfun2(te))
         g__t=np.interp(tim,tim3,g__3) 
@@ -460,17 +504,18 @@ def fourje2(G,A,K_,gfun2,T,miumod,CorrD,Cy,Cx,snum):
     # for index, te in np.ndenumerate(tim):
     #      g__[index[0]]=2*np.trapz(Cw(te,x0),x=x0)
     #g__=gfun2(tim)
-    GJ=np.zeros(numG)
-    for i in range(numG):
-        GJ[i]=bolc(G[i],G[0],T)
-    miu_max=miumod.max()    
-    for i in range(numE):
-        for j in range(numG):
-            #if bolc(G[j],G[0],T)*miumod[i][j]/miumod.max() <1e-6:
-            if GJ[j]*miumod[i][j]/miu_max <1e-6:
-                continue
-            else:
-                rew+=(np.exp((-1j*(A[i]-G[j])-ddef+(K_[i+numG,i+numG]+K_[j,j])/2-1/2*dinh*tim)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG]))))*miumod[i][j]*GJ[j]#bolc(G[j],G[0],T)
+    rew=propg(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim)
+    # GJ=np.zeros(numG)
+    # for i in range(numG):
+    #     GJ[i]=bolc(G[i],G[0],T)
+    # miu_max=miumod.max()    
+    # for i in range(numE):
+    #     for j in range(numG):
+    #         #if bolc(G[j],G[0],T)*miumod[i][j]/miumod.max() <1e-6:
+    #         if GJ[j]*miumod[i][j]/miu_max <1e-6:
+    #             continue
+    #         else:
+    #             rew+=(np.exp((-1j*(A[i]-G[j])-ddef+(K_[i+numG,i+numG]+K_[j,j])/2-1/2*dinh*tim)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG]))))*miumod[i][j]*GJ[j]#bolc(G[j],G[0],T)
             #-np.conjugate(np.exp((-1j*(A[i]-G[j])-ddef-(K_(i+numG,i+numG)+K_(j,j))/2-1/2*dinh*tim)*tim-(gfun2(tim))*(CorrD[j,j]+CorrD[i+numG,i+numG]-CorrD[i+numG,j]-CorrD[j,i+numG])))
     print("2")
    # print(datetime.datetime.now())
@@ -480,5 +525,6 @@ def fourje2(G,A,K_,gfun2,T,miumod,CorrD,Cy,Cx,snum):
    # print(datetime.datetime.now())
     length=np.shape(rew)[0]
     freq = np.fft.fftshift(np.fft.fftfreq(length, d=step/(2*np.pi)))
+    #freq =np.array(freq,dtype=np.complex64)
     return freq,ft,rew
 

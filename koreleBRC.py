@@ -3,7 +3,7 @@ from numba import jit
 import datetime
 num_of_proces=4
 ke=1#1#1
-kvv=0#1#10#1#
+kvv=10000#1#10#1#
 kv=np.sqrt(kvv)#0.000000001#1#1
 
 
@@ -13,37 +13,42 @@ kv=np.sqrt(kvv)#0.000000001#1#1
 def koff(B,p,i, m, v2):
     return B[m*v2+i%v2,p]
 
-@jit
-def ksi__(pa, pb, i, i_s, sg,B,v2, saitnum, virpnum, virp,kff,FR):
+#@jit#(nopython=True)#(nopython=True)
+def ksi__(pa, pb, i, i_s, sg,B,v2, saitnum, virpnum, virp,kff,FR,hvirp):
     #summ=0
     if virp[i,i_s]==0 and sg<0:
-        return 0
+         return 0
     elif virp[i,i_s]==virpnum-1 and sg>0:
-        return 0
-    elif np.sum(virp[i])==virpnum-1 and sg>0 and FR:
-        return 0     
+         return 0
+    # elif np.sum(virp[i])==virpnum-1 and sg>0 and FR:
+    #     return 0     
     else:
-        i_=np.zeros(saitnum)
-        i_=np.copy(virp[i])
+        i_=np.zeros(saitnum,dtype=np.int)
+        #i_=np.copy(virp[i])
         i_[i_s]+=sg
-        tes=np.size(np.where(np.all(virp==i_,axis=1)))
-        if tes==0:
-            return 0
-        i__=np.where(np.all(virp==i_,axis=1))[0][0]
-        #summ+=np.conjugate(koff(B,pa,i,l,v2))*koff(B,pb,i__,l,v2)
-        #summ+=np.dot(np.conjugate(kff[pa,i,:]),kff[pb,i__,:])  
-        return np.conjugate(kff[pa,i,i_s])*kff[pb,i__,i_s]       
+        hh=(virp[i]+i_).tobytes()
+        if hh in hvirp:
+            return np.conjugate(kff[pa,i,i_s])*kff[pb,hvirp[hh],i_s]
+        else:
+           return 0     
+        # tes=np.size(np.where(np.all(virp==i_,axis=1)))
+        # if tes==0:
+        #     return 0
+        # i__=np.where(np.all(virp==i_,axis=1))[0][0]
+        # #summ+=np.conjugate(koff(B,pa,i,l,v2))*koff(B,pb,i__,l,v2)
+        # #summ+=np.dot(np.conjugate(kff[pa,i,:]),kff[pb,i__,:])  
+        # return np.conjugate(kff[pa,i,i_s])*kff[pb,i__,i_s]       
     #return summ 
 
 
 
-@jit         
+       
 def ksi(pa,pb,  i,B, v2, saitnum):
     summ=0
     for l in range(saitnum):
         summ+=np.conjugate(koff(B,pa,i,l,v2))*koff(B,pb,i,l,v2)    
     return summ 
-@jit
+@jit(nopython=True)
 def ksi2(pa,pb,pc,pd  ,i,j,B, v2, saitnum,mul,kff):
     summ=0
     for l in range(saitnum):
@@ -52,7 +57,7 @@ def ksi2(pa,pb,pc,pd  ,i,j,B, v2, saitnum,mul,kff):
 
 
 
-@jit
+@jit(nopython=True)
 def h_e(p1, p2,p3,p4,v2, saitnum, virpnum,B, virp,S,mul,dll1,dll_1,kff,om0,FR=True):
     sum2=0
     if kvv!=0:
@@ -184,7 +189,7 @@ def Corrcoff(numG,numE,numF,B,Bf,virp,v2,virpnum,saitnum,S=0,mul=1,FR=True,OM=1)
     return CorrOffd,CorrD
 
 
-@jit        
+@jit    
 def Corrcoff_2(numG,numE,numF,B,Bf,virp,v2,virpnum,saitnum,S=0,mul=1,FR=True,OM=1,snum=1):
     if np.size(OM)==1:
         OM=np.array([OM]*saitnum)
@@ -192,7 +197,9 @@ def Corrcoff_2(numG,numE,numF,B,Bf,virp,v2,virpnum,saitnum,S=0,mul=1,FR=True,OM=
         S=np.array([S]*saitnum)
     # if np.size(mul)==1:
     #     mul=np.array([mul]*saitnum)
-
+    hvirp={}
+    for i in range(v2):
+         hvirp[virp[i].tobytes()]=i
     kff=np.zeros([numE,v2,saitnum])
     for p in range(numE):
             for nn in range(saitnum):
@@ -200,6 +207,7 @@ def Corrcoff_2(numG,numE,numF,B,Bf,virp,v2,virpnum,saitnum,S=0,mul=1,FR=True,OM=
                     kff[p,ii,nn]=koff(B,p,ii, nn, v2)
     Dll1=np.zeros([numE,numE,v2,saitnum])
     Dll_1=np.zeros([numE,numE,v2,saitnum])
+  #  Dll_2=np.zeros([numE,numE,v2,saitnum])
    # print(datetime.datetime.now())
    # print("Calculating coff\n")
     if kv!=0 or kvv!=0:
@@ -207,10 +215,17 @@ def Corrcoff_2(numG,numE,numF,B,Bf,virp,v2,virpnum,saitnum,S=0,mul=1,FR=True,OM=
             for p22 in range(numE):
                 for ii in range(v2):
                     for ss in range(saitnum):
-                        Dll1[p11,p22,ii,ss]=ksi__(p11,p22,ii,ss,+1,B,v2,saitnum, virpnum,virp,kff,FR)
-                        Dll_1[p11,p22,ii,ss]=ksi__(p11,p22,ii,ss,-1,B,v2,saitnum, virpnum,virp,kff,FR)
-
-   # print(datetime.datetime.now())
+                        #Dll1[p11,p22,ii,ss]=ksi__(p11,p22,ii,ss,+1,B,v2,saitnum, virpnum,virp,kff,FR)
+                        #Dll_1[p11,p22,ii,ss]=ksi__(p11,p22,ii,ss,-1,B,v2,saitnum, virpnum,virp,kff,FR)
+                        Dll1[p11,p22,ii,ss]=ksi__(p11,p22,ii,ss,+1,B,v2,saitnum, virpnum,virp,kff,FR,hvirp)
+                        Dll_1[p11,p22,ii,ss]=ksi__(p11,p22,ii,ss,-1,B,v2,saitnum, virpnum,virp,kff,FR,hvirp)
+                        
+                        #Dll_2[p11,p22,[0,1,2,3,4,5,6],ss]=np.conjugate(Dll1[p22,p11,[1,2,3,4,5,6,0],ss])
+    # Dll_2=np.conjugate(np.roll(Dll_2,2,2))
+    # print(np.sum((Dll_2-Dll_1)**2)) 
+    # print(np.roll(Dll1[10,20,:,0],1))  
+    # print(Dll_1[40,10,:,:]) 
+    # print(Dll_2[40,10,:,:])               
    # print("Calculating coff done\n")
     
     CorrOffd=np.zeros((snum,numE+numG+numF,numE+numG+numF))
