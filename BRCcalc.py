@@ -37,12 +37,11 @@ plt.register_cmap(name='BlueRed3', data=cdict3)
 #s,om,j,T,virpnum2=[float(i) for i in (sys.argv[1:])]
 s=float(sys.argv[1])
 om=float(sys.argv[2])
-j=float(sys.argv[3])
-T=float(sys.argv[4])
-virpnum2=int(sys.argv[5])
+T=float(sys.argv[3])
+virpnum2=int(sys.argv[4])
 fig, ax=plt.subplots(figsize=(8,6))
-vardas='1arew1000_'+str(s)+'_'+str(om)+'_'+str(j)+'_'+str(T)+'K_'+str(virpnum2)+"_diskretus_test"
-spektras(ax,s,om,j,T,Kvsk=virpnum2,nam="BRC/"+vardas)
+vardas='1arew1000_'+str(s)+'_'+str(om)+'_'+str(T)+'K_'+str(virpnum2)+"_diskretus_test"
+spektras(ax,s,om,T,Kvsk=virpnum2,nam="BRC/"+vardas)
 ax.set_xlim([10000,15000])
 
 

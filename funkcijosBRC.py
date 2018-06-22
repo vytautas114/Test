@@ -439,12 +439,11 @@ def propg(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim):
     miu_max=miumod.max()    
     for i in range(numE):
         for j in range(numG):
-            #if bolc(G[j],G[0],T)*miumod[i][j]/miumod.max() <1e-6:
             if GJ[j]*miumod[i][j]/miu_max <1e-6:
                 continue
             else:
-                rew+=(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG]))))*miumod[i][j]*GJ[j]#bolc(G[j],G[0],T)
-            #-np.conjugate(np.exp((-1j*(A[i]-G[j])-ddef-(K_(i+numG,i+numG)+K_(j,j))/2-1/2*dinh*tim)*tim-(gfun2(tim))*(CorrD[j,j]+CorrD[i+numG,i+numG]-CorrD[i+numG,j]-CorrD[j,i+numG])))
+                rew+=(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG]))))*miumod[i][j]*GJ[j]
+            #-np.conjugate(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG]))))
     return rew
 @jit 
 def g33(tim3,x0,T,y0):
@@ -465,66 +464,33 @@ def g33_2(tim3,x0,T,y0):
 #@jit
 def fourje2(G,A,K_,gfun2,T,miumod,CorrD,Cy,Cx,snum):
     step=0.00001
-    dinh=0
-    ddef=0#70/3.14
-    zpl=0
     numG=len(G)
     numE=len(A)
     g__=0
-   # print("1")
-   # print(datetime.datetime.now())
-    #print(numG,numE)
+ 
     for zz in range(snum):
-        x0=Cx[zz]#np.arange(0,20000,0.1,dtype=np.float32)
-        y0=Cy[zz]#SDFDEB(x0,50,1)
+        x0=Cx[zz]
+        y0=Cy[zz]
         x0[0]=0.0001
         y0[0]=0
         
         tim=np.arange(0,step*2**16,step,dtype=np.float32)
         tim2=np.arange(0,step*2**8,step,dtype=np.float32)
-        #tim2=np.arange(0,step*2**8,2**2*step,dtype=np.float32)
         tim3=np.arange(step*2**8,step*2**16,2**4*step,dtype=np.float32)
-        #tim3=np.logspace(step*2**8,step*2**16,100)
         tim3=np.concatenate((tim2,tim3))
         rew=np.zeros(np.shape(tim)[0],dtype=np.complex64)
         g__3=np.zeros(np.shape(tim3)[0],dtype=np.complex64)
         g__t=np.zeros(np.shape(tim)[0],dtype=np.complex64)
         g__3=g33(tim3, x0, T, y0)
-        # for ii in range(np.size(tim3)):
-        #      g__3[ii]=2*np.trapz(Cw(tim3[ii],x0,T,y0),x=x0)
-        #      if index[0]%10==0:
-        #          print(index[0],g__3[index[0]],gfun2(te))
         g__t=np.interp(tim,tim3,g__3) 
         if zz==0:
             g__=g__t
         else:
             g__=np.stack((g__,g__t))    
-   # print("2")
-   # print(datetime.datetime.now())
-    # for index, te in np.ndenumerate(tim):
-    #      g__[index[0]]=2*np.trapz(Cw(te,x0),x=x0)
-    #g__=gfun2(tim)
+
     rew=propg(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim)
-    # GJ=np.zeros(numG)
-    # for i in range(numG):
-    #     GJ[i]=bolc(G[i],G[0],T)
-    # miu_max=miumod.max()    
-    # for i in range(numE):
-    #     for j in range(numG):
-    #         #if bolc(G[j],G[0],T)*miumod[i][j]/miumod.max() <1e-6:
-    #         if GJ[j]*miumod[i][j]/miu_max <1e-6:
-    #             continue
-    #         else:
-    #             rew+=(np.exp((-1j*(A[i]-G[j])-ddef+(K_[i+numG,i+numG]+K_[j,j])/2-1/2*dinh*tim)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG]))))*miumod[i][j]*GJ[j]#bolc(G[j],G[0],T)
-            #-np.conjugate(np.exp((-1j*(A[i]-G[j])-ddef-(K_(i+numG,i+numG)+K_(j,j))/2-1/2*dinh*tim)*tim-(gfun2(tim))*(CorrD[j,j]+CorrD[i+numG,i+numG]-CorrD[i+numG,j]-CorrD[j,i+numG])))
-    print("2")
-   # print(datetime.datetime.now())
-    #rew=np.concatenate((rew,np.zeros(np.size(tim)*3)))
     ft=np.fft.fftshift(np.fft.fft(rew)) 
-    print("3")
-   # print(datetime.datetime.now())
     length=np.shape(rew)[0]
     freq = np.fft.fftshift(np.fft.fftfreq(length, d=step/(2*np.pi)))
-    #freq =np.array(freq,dtype=np.complex64)
     return freq,ft,rew
 
