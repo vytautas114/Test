@@ -40,7 +40,7 @@ om=float(sys.argv[2])
 T=float(sys.argv[3])
 virpnum2=int(sys.argv[4])
 fig, ax=plt.subplots(figsize=(8,6))
-vardas='1arew1000_'+str(s)+'_'+str(om)+'_'+str(T)+'K_'+str(virpnum2)+"_diskretus_test"
+vardas='1arew0_'+str(s)+'_'+str(om)+'_'+str(T)+'K_'+str(virpnum2)+"_diskretus_test"
 spektras(ax,s,om,T,Kvsk=virpnum2,nam="BRC/"+vardas)
 ax.set_xlim([10000,15000])
 

@@ -3,7 +3,7 @@ from numba import jit
 import datetime
 num_of_proces=4
 ke=1#1#1
-kvv=10000#1#10#1#
+kvv=10#1#10#1#
 kv=np.sqrt(kvv)#0.000000001#1#1
 
 
@@ -29,16 +29,17 @@ def ksi__(pa, pb, i, i_s, sg, saitnum, virpnum, virp, kff, hvirp):
            return 0     
 
 
-@jit(nopython=True)
+@jit#(nopython=True)
 def ksi2(pa,pb,pc,pd, saitnum,mul,kff):
     summ=0
-    for l in range(saitnum):
-        summ+=np.dot(np.conjugate(kff[pa,:,l]),kff[pb,:,l])*np.dot(np.conjugate(kff[pc,:,l]),kff[pd,:,l])*mul[l]
+    #for l in range(saitnum):
+    #    summ+=np.dot(np.conjugate(kff[pa,:,l]),kff[pb,:,l])*np.dot(np.conjugate(kff[pc,:,l]),kff[pd,:,l])*mul[l]
+    summ = np.einsum("il,il,jl,jl,l",np.conjugate(kff[pa]),kff[pb],np.conjugate(kff[pc]),kff[pd],mul)
     return summ 
 
 
 
-@jit(nopython=True)
+@jit#(nopython=True)
 def h_e(p1, p2,p3,p4, saitnum, virp,S,mul,dll1,dll_1,kff,om0,FR=True):
     sum2=0
     if kvv!=0:
@@ -168,17 +169,10 @@ def h_g(i, j,k, l, virp, virpnum, saitnum,mul):
 
 @jit    
 def Corrcoff_2(numG,numE,numF,B,Bf,virp,v2,virpnum,saitnum,S=0,mul=1,FR=True,OM=1,snum=1):
-    
-    
-
-
-
     if np.size(OM)==1:
         OM=np.array([OM]*saitnum)
     if np.size(S)==1:
         S=np.array([S]*saitnum)
-    # if np.size(mul)==1:
-    #     mul=np.array([mul]*saitnum)
     hvirp={}
     for i in range(v2):
          hvirp[virp[i].tobytes()]=i
@@ -202,7 +196,7 @@ def Corrcoff_2(numG,numE,numF,B,Bf,virp,v2,virpnum,saitnum,S=0,mul=1,FR=True,OM=
     CorrD=np.zeros((snum,numE+numG+numF,numE+numG+numF))
     for zz in range(snum):
         for ii in range(numE+numG+numF):
-            for jj in range(numE+numG+numF):#ii+1):
+            for jj in range(numE+numG+numF):
                 if ii<numG and jj<numG:
                     CorrOffd[zz,ii,jj]=0#h_g(ii,jj,jj,ii,virp,virpnum,saitnum,mul)
                     CorrD[zz,ii,jj]=0#h_g(ii,ii,jj,jj,virp,virpnum,saitnum,mul) 

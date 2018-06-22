@@ -10,12 +10,8 @@ os.environ['MKL_NUM_THREADS'] = '1'
 
 #@jit
 def spektras(ax,s0,om0,T,Kvsk=2,nam='BRC/1td_test'):
-    
-   
 
     print(datetime.datetime.now())
-    #kurtSDF(100,0,1)
-
     # A=np.loadtxt('SDF.txt')
     # Cy=A[3:] #A[0]-N A[1]-X0 A[2]-dx
     # Cx=np.arange(A[1],A[1]+int(A[0])*A[2],A[2])
@@ -63,9 +59,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,nam='BRC/1td_test'):
                 
         return Cfact 
     
-        
-    
-    
+   
     Factors=condonFactors(Kvsk+1,s0)#np.zeros((virpnum+2,virpnum+2))
 
     saitnum=6
@@ -184,17 +178,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,nam='BRC/1td_test'):
        
 
 
-        def gfun2(t):
-            #return 0
-            summ=0
-            ii=0
-            #summ+=2*s[ii]*((np.tanh(om[ii]/(2*T*0.69))**(-1))*(1-np.cos(om[ii]*t))+1j*(np.sin(om[ii]*t)-om[ii]*t))
-            beta=(1/(T*0.695028))
-            lam=25
-            gam=50
-            summ+=lam/(gam)*(2/(beta*gam)-1j)*(np.exp(-gam*t)+gam*t-1)
-            return summ
-   
+     
         
         def K_2(a,b):
             tarp1=0
@@ -246,7 +230,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,nam='BRC/1td_test'):
       
         cxt=np.stack((Cx,Cx2))
         cyt=np.stack((Cy,Cy2))
-        freq,ft,resp=fourje2(G,A,Spartos,gfun2,T,miumod,CorrD,cyt,cxt,2)
+        freq,ft,resp=fourje2(G,A,Spartos,T,miumod,CorrD,cyt,cxt,2)
         print("fft end",datetime.datetime.now())
         
         

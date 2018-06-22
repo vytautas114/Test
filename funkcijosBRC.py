@@ -255,7 +255,7 @@ def deriniairev(numM,numKv):
 
 
 def bolc(E,E0,T):
-    return np.exp(-E/(T*0.695028 ))/np.exp(-E0/(T*0.695028 ))
+    return np.exp(-(E-E0)/(T*0.695028 ))#/np.exp(-E0/(T*0.695028 ))
 
 
 def fur(E_eg,G_def,inh):
@@ -411,6 +411,8 @@ def fourje(G,A,K_,gfun2,T,miumod,CorrD,Cy,Cx):
     length=np.shape(rew)[0]
     freq = np.fft.fftshift(np.fft.fftfreq(length, d=step/(2*np.pi)))
     return freq,ft,rew
+
+
 @jit(nopython=True)
 def Cw(te,x,T,y0):
     #np.tanh(x/(2*T*0.695028))**(-1)
@@ -442,8 +444,8 @@ def propg(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim):
             if GJ[j]*miumod[i][j]/miu_max <1e-6:
                 continue
             else:
-                rew+=(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG]))))*miumod[i][j]*GJ[j]
-            #-np.conjugate(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG]))))
+                rew+=(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG])))
+            -np.conjugate(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG])))))*miumod[i][j]*GJ[j]
     return rew
 @jit 
 def g33(tim3,x0,T,y0):
@@ -462,23 +464,22 @@ def g33_2(tim3,x0,T,y0):
     return g__3  
 
 #@jit
-def fourje2(G,A,K_,gfun2,T,miumod,CorrD,Cy,Cx,snum):
-    step=0.00001
+def fourje2(G,A,K_,T,miumod,CorrD,Cy,Cx,snum):
+    step=0.0001
     numG=len(G)
     numE=len(A)
     g__=0
- 
+    tim=np.arange(0,step*2**14,step,dtype=np.float32)
+    tim2=np.arange(0,step*2**8,step,dtype=np.float32)
+    tim3=np.arange(step*2**8,step*2**14,2**4*step,dtype=np.float32)
+    tim3=np.concatenate((tim2,tim3))
+   # tim3=tim
+    rew=np.zeros(np.shape(tim)[0],dtype=np.complex64)
     for zz in range(snum):
         x0=Cx[zz]
         y0=Cy[zz]
         x0[0]=0.0001
         y0[0]=0
-        
-        tim=np.arange(0,step*2**16,step,dtype=np.float32)
-        tim2=np.arange(0,step*2**8,step,dtype=np.float32)
-        tim3=np.arange(step*2**8,step*2**16,2**4*step,dtype=np.float32)
-        tim3=np.concatenate((tim2,tim3))
-        rew=np.zeros(np.shape(tim)[0],dtype=np.complex64)
         g__3=np.zeros(np.shape(tim3)[0],dtype=np.complex64)
         g__t=np.zeros(np.shape(tim)[0],dtype=np.complex64)
         g__3=g33(tim3, x0, T, y0)
@@ -489,8 +490,14 @@ def fourje2(G,A,K_,gfun2,T,miumod,CorrD,Cy,Cx,snum):
             g__=np.stack((g__,g__t))    
 
     rew=propg(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim)
+    
     ft=np.fft.fftshift(np.fft.fft(rew)) 
     length=np.shape(rew)[0]
     freq = np.fft.fftshift(np.fft.fftfreq(length, d=step/(2*np.pi)))
+    
+    plt.plot(tim,np.real(rew),tim,np.imag(rew))
+    plt.show()
+    plt.savefig("test.png")
+    print(freq[10]-freq[11],rew[-1],freq[-1])
     return freq,ft,rew
 
