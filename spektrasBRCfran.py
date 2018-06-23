@@ -17,7 +17,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,nam='BRC/1td_test'):
     # Cx=np.arange(A[1],A[1]+int(A[0])*A[2],A[2])
     wc=40
     sig=0.5
-    Cx=np.linspace(0.01,2000,20000)
+    Cx=np.linspace(0.0001,2000,20000)
     
     
     

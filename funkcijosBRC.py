@@ -438,16 +438,17 @@ def Cw_return(te,x,T,y0):
 def propg(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim):
     rew=np.zeros(np.shape(tim)[0],dtype=np.complex64)
     GJ=np.zeros(numG)
+    decay=0
     for i in range(numG):
         GJ[i]=bolc(G[i],G[0],T)
-    miu_max=miumod.max()    
+    miu_max=miumod.max()  
     for i in range(numE):
         for j in range(numG):
             if GJ[j]*miumod[i][j]/miu_max <1e-6:
                 continue
             else:
-                rew+=(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG])))
-            -np.conjugate(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG])))))*miumod[i][j]*GJ[j]
+                rew+=(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2-decay)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG])))
+            -np.conjugate(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2-decay)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG])))))*miumod[i][j]*GJ[j]
     return rew
 @jit 
 def g33(tim3,x0,T,y0):
@@ -467,13 +468,13 @@ def g33_2(tim3,x0,T,y0):
 
 #@jit
 def fourje2(G,A,K_,T,miumod,CorrD,Cy,Cx,snum):
-    step=0.00003
+    step=0.0001
     numG=len(G)
     numE=len(A)
     g__=0
     tim=np.arange(0,step*2**12,step,dtype=np.float32)
     tim2=np.arange(0,step*2**8,step,dtype=np.float32)
-    tim3=np.arange(step*2**8,step*2**12,step*2**3,dtype=np.float32)
+    tim3=np.arange(step*2**8,step*2**12,step,dtype=np.float32)
     tim3=np.concatenate((tim2,tim3))
    # tim3=tim
     rew=np.zeros(np.shape(tim)[0],dtype=np.complex64)
@@ -493,14 +494,17 @@ def fourje2(G,A,K_,T,miumod,CorrD,Cy,Cx,snum):
 
     rew=propg(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim)
     
-    rew=np.concatenate((rew,np.zeros(np.shape(tim)[0]*7,dtype=np.complex64)+rew[-1]))
-    ft=np.fft.fftshift(np.fft.fft(rew)) 
-    length=np.shape(rew)[0]
-    freq = np.fft.fftshift(np.fft.fftfreq(length, d=step/(2*np.pi)))
+    #rew=np.concatenate((rew,np.zeros(np.shape(tim)[0]*7,dtype=np.complex64)))
+    ft=np.fft.fft(rew,n=np.shape(rew)[0]*8)
+    length=np.shape(rew)[0]*8
+    freq = np.fft.fftfreq(length, d=step/(2*np.pi))
     
-    #plt.plot(tim,np.imag(rew))
-    #plt.show()
-    #plt.savefig("test.png")
-    print(freq[10]-freq[11],rew[-1],freq[-1])
+    plt.plot(tim,np.imag(g__[0]),tim,np.real(g__[0]))
+    plt.show()
+    plt.savefig("test1.png")
+    plt.plot(tim,np.imag(g__[1]),tim,np.real(g__[1]))
+    plt.show()
+    plt.savefig("test2.png")
+    print(freq[10]-freq[11],rew[-1],freq.max())
     return freq,ft,rew
 
