@@ -1,9 +1,9 @@
 import numpy as np
 from numba import jit
-import datetime
+#import datetime
 num_of_proces=4
 ke=1#1#1
-kvv=10#1#10#1#
+kvv=1#1#10#1#
 kv=np.sqrt(kvv)#0.000000001#1#1
 
 
@@ -18,7 +18,7 @@ def ksi__(pa, pb, i, i_s, sg, saitnum, virpnum, virp, kff, hvirp):
     if virp[i,i_s]==0 and sg<0:
          return 0
     elif virp[i,i_s]==virpnum-1 and sg>0:
-         return 0 
+         return 0
     else:
         i_=np.zeros(saitnum,dtype=np.int)
         i_[i_s]+=sg
@@ -28,18 +28,53 @@ def ksi__(pa, pb, i, i_s, sg, saitnum, virpnum, virp, kff, hvirp):
         else:
            return 0     
 
+def ksi_opt(pa, pb, i, i_s, sg, saitnum, virpnum, virp, kff, hvirp):
+    if virp[i,i_s]==0 and sg<0:
+         return [0,0,0]  
+    elif virp[i,i_s]==virpnum-1 and sg>0:
+         return [0,0,0]  
+    else:
+        i_=np.zeros(saitnum,dtype=np.int)
+        i_[i_s]+=sg
+        hh=(virp[i]+i_).tobytes()
+        if hh in hvirp:
+            return np.conjugate(kff[pa,i,i_s])*kff[pb,hvirp[hh],i_s] , i , hvirp[hh]
+        else:
+           return [0,0,0]
+@jit(cache=True)
+def ksi_opt_lop(numE,numG,v2,kvv, saitnum, virpnum, virp, kff, hvirp):
+    Dll1=np.zeros([numE,numE,v2,saitnum])
+    Dll_1=np.zeros([numE,numE,v2,saitnum])
+    if kv!=0 or kvv!=0:
+        for pb in range(numE):
+            for pa in range(numE):
+                for i in range(v2):
+                    for i_s in range(saitnum):
+                        i_=np.zeros(saitnum,dtype=np.int)
+                        i_[i_s]+=1
+                        hh=(virp[i]+i_).tobytes()
+                        if hh in hvirp:
+                            Dll1[pa,pb,i,i_s]=np.conjugate(kff[pa,i,i_s])*kff[pb,hvirp[hh],i_s]
+                            Dll_1[pb,pa,hvirp[hh],i_s]=np.conjugate(Dll1[pa,pb,i,i_s])
 
-@jit#(nopython=True)
+    return  Dll1, Dll_1
+
+
+
+
+
+
+@jit(nopython=True,cache=True)
 def ksi2(pa,pb,pc,pd, saitnum,mul,kff):
     summ=0
-    #for l in range(saitnum):
-    #    summ+=np.dot(np.conjugate(kff[pa,:,l]),kff[pb,:,l])*np.dot(np.conjugate(kff[pc,:,l]),kff[pd,:,l])*mul[l]
-    summ = np.einsum("il,il,jl,jl,l",np.conjugate(kff[pa]),kff[pb],np.conjugate(kff[pc]),kff[pd],mul)
+    for l in range(saitnum):
+        summ+=np.dot(np.conjugate(kff[pa,:,l]),kff[pb,:,l])*np.dot(np.conjugate(kff[pc,:,l]),kff[pd,:,l])*mul[l]
+    #summ = np.einsum("il,il,jl,jl,l",np.conjugate(kff[pa]),kff[pb],np.conjugate(kff[pc]),kff[pd],mul)
     return summ 
 
 
 
-@jit#(nopython=True)
+@jit(nopython=True,cache=True)
 def h_e(p1, p2,p3,p4, saitnum, virp,S,mul,dll1,dll_1,kff,om0,FR=True):
     sum2=0
     if kvv!=0:
@@ -167,7 +202,7 @@ def h_g(i, j,k, l, virp, virpnum, saitnum,mul):
 #     return CorrOffd,CorrD
 
 
-@jit    
+@jit(cache=True)    
 def Corrcoff_2(numG,numE,numF,B,Bf,virp,v2,virpnum,saitnum,S=0,mul=1,FR=True,OM=1,snum=1):
     if np.size(OM)==1:
         OM=np.array([OM]*saitnum)
@@ -176,22 +211,27 @@ def Corrcoff_2(numG,numE,numF,B,Bf,virp,v2,virpnum,saitnum,S=0,mul=1,FR=True,OM=
     hvirp={}
     for i in range(v2):
          hvirp[virp[i].tobytes()]=i
-    kff=np.zeros([numE,v2,saitnum])
-    for p in range(numE):
-            for nn in range(saitnum):
-                for ii in range(v2):
-                    kff[p,ii,nn]=koff(B,p,ii, nn, v2)
+    kff=np.moveaxis((B.reshape(saitnum,v2,saitnum*v2)), [0, 1, 2], [2, 1, 0])
+
+    # for p in range(numE):
+    #         for nn in range(saitnum):
+    #             for ii in range(v2):
+    #                 kff[p,ii,nn]=koff(B,p,ii, nn, v2)
+    #print("22")
     Dll1=np.zeros([numE,numE,v2,saitnum])
     Dll_1=np.zeros([numE,numE,v2,saitnum])
-    if kv!=0 or kvv!=0:
-        for p11 in range(numE):
-            for p22 in range(numE):
-                for ii in range(v2):
-                    for ss in range(saitnum):
-                        Dll1[p11,p22,ii,ss]=ksi__(p11,p22,ii,ss,+1,saitnum, virpnum,virp,kff,hvirp)
-                        Dll_1[p11,p22,ii,ss]=ksi__(p11,p22,ii,ss,-1,saitnum, virpnum,virp,kff,hvirp)
-                       
-    
+    Dll1,Dll_1=ksi_opt_lop(numE,numG,v2,kvv, saitnum, virpnum, virp, kff, hvirp)
+    # if kv!=0 or kvv!=0:
+    #     for p11 in range(numE):
+    #         for p22 in range(numE):
+    #             for ii in range(v2):
+    #                 for ss in range(saitnum):
+    #                    # Dll1[p11,p22,ii,ss]=ksi__(p11,p22,ii,ss,+1,saitnum, virpnum,virp,kff,hvirp)
+    #                    # Dll_1[p11,p22,ii,ss]=ksi__(p11,p22,ii,ss,-1,saitnum, virpnum,virp,kff,hvirp)
+    #                     Dll1[p11,p22,ii,ss],a,b=ksi_opt(p11,p22,ii,ss,+1,saitnum, virpnum,virp,kff,hvirp)
+    #                     if a!=b:
+    #                         Dll_1[p22,p11,b,ss]=Dll1[p11,p22,ii,ss]
+    #print("22")
     CorrOffd=np.zeros((snum,numE+numG+numF,numE+numG+numF))
     CorrD=np.zeros((snum,numE+numG+numF,numE+numG+numF))
     for zz in range(snum):

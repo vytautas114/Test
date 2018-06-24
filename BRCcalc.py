@@ -2,15 +2,16 @@
 import matplotlib as mpl
 import sys
 mpl.use('Agg')
+import argparse
 
-import numpy as np
-import matplotlib
+#import numpy as np
+#import matplotlib
 import matplotlib.pyplot as plt
-import scipy
-import scipy.integrate
-from scipy.interpolate import griddata
-import datetime
-import subprocess
+#import scipy
+#import scipy.integrate
+#from scipy.interpolate import griddata
+#import datetime
+#import subprocess
 from spektrasBRCfran import spektras
 
 cdict3 = {'red':  ((0.0, 0.0, 0.0),
@@ -35,10 +36,26 @@ cdict3 = {'red':  ((0.0, 0.0, 0.0),
 plt.register_cmap(name='BlueRed3', data=cdict3)   
 
 #s,om,j,T,virpnum2=[float(i) for i in (sys.argv[1:])]
-s=float(sys.argv[1])
-om=float(sys.argv[2])
-T=float(sys.argv[3])
-virpnum2=int(sys.argv[4])
+parser = argparse.ArgumentParser()
+parser.add_argument("S", type=float, help="Huang Rhys factor")
+parser.add_argument("Om", type=float, help="Frequency of mode, cm^-1")
+parser.add_argument("T", type=float, help="Temperature in kelvin")
+parser.add_argument("Nq", type=int, help="Number of allowed vibrational quanta in system")
+#parser.add_argument("-v", "--verbosity", action="count", default=0)
+args = parser.parse_args()
+#answer = args.x**args.y
+
+s=args.S
+om=args.Om
+T=args.T
+virpnum2=args.Nq
+
+
+
+# s=float(sys.argv[1])
+# om=float(sys.argv[2])
+# T=float(sys.argv[3])
+# virpnum2=int(sys.argv[4])
 fig, ax=plt.subplots(figsize=(8,6))
 vardas='1arew0_'+str(s)+'_'+str(om)+'_'+str(T)+'K_'+str(virpnum2)+"_diskretus_test"
 spektras(ax,s,om,T,Kvsk=virpnum2,nam="BRC/"+vardas)

@@ -4,7 +4,7 @@ import numpy as np
 from itertools import product
 import datetime
 from numba import jit
-from scipy import integrate
+from scipy.integrate import simps 
 
 def rink(sk):
         ll=[]
@@ -253,7 +253,7 @@ def deriniairev(numM,numKv):
 #def lor(x, x0, H):
 #    return 1/np.pi*(1/2*H)/((x-x0)**2+(1/2*H)**2)
 
-
+@jit
 def bolc(E,E0,T):
     return np.exp(-(E-E0)/(T*0.695028 ))#/np.exp(-E0/(T*0.695028 ))
 
@@ -413,13 +413,77 @@ def fourje(G,A,K_,gfun2,T,miumod,CorrD,Cy,Cx):
     return freq,ft,rew
 
 
-@jit(nopython=True)
+@jit(cache=True,nopython=True)
+def ctan(x,T):
+    return (1+np.exp(-x/(T*0.695028)))/(1-np.exp(-x/(T*0.695028)))
+
+
+@jit(cache=True,nopython=True)
 def Cw(te,x,T,y0):
     #np.tanh(x/(2*T*0.695028))**(-1)
     #y=np.zeros(np.size(x0))
-    y0=y0/(2*np.pi*x**2)*((1+np.exp(-x/(T*0.695028)))/(1-np.exp(-x/(T*0.695028)))*(1-np.cos(x*te))+1j*np.sin(x*te)-1j*x*te)
+    return y0/(2*np.pi*x**2)*((1+np.exp(-x/(T*0.695028)))/(1-np.exp(-x/(T*0.695028)))*(1-np.cos(x*te))+1j*np.sin(x*te)-1j*x*te)
 #   y[0]=0
-    return y0
+    #return y
+
+@jit(cache=True)
+def g_const(x,T,y0):
+    return simps(y0/(2*np.pi*x**2)*ctan(x,T),x=x)#  2*np.trapz(Cw(tim3[ii],x0[1:],T,y0[1:]),x=x0[1:])
+@jit(cache=True)
+def g_lintime(x,T,y0): 
+    return simps(-y0/(2*np.pi*x)*1j,x=x)  
+@jit(cache=True,nopython=True)
+def g_intcos(x,T,y0):
+    return -y0/(2*np.pi*x**2)*ctan(x,T) #(exp(+)+exp(-))/2   
+@jit(cache=True,nopython=True)
+def g_intsin(x,T,y0):
+    return  y0/(2*np.pi*x**2)*1j   #(exp(+)-exp(-))/2j  
+
+#    np.trapz(g_const)+np.trapz(g_lintime)*t+ 
+@jit(cache=True)
+def gnew(tim3,x,T,y0): 
+    st=0.05
+    cx_2 = np.arange(x[0],4000,st,np.float32)
+    #print(np.shape(x)[0])
+    x=np.concatenate((-x[:0:-1],x))
+    y0=np.concatenate((-y0[:0:-1],y0))
+    g__3=np.zeros(len(tim3),dtype=np.complex64)
+    g__3=g_const(x,T,y0) + g_lintime(x,T,y0)*tim3
+    
+    cy_2=np.interp(cx_2,x,y0)
+    #plt.plot(x,y0)
+    x=cx_2
+    y0=cy_2
+    #y0[0]=0
+    #x[0]=0.001
+    
+    
+
+    g_C=g_intcos(x,T,y0) 
+    #g_C=np.concatenate((g_C[:0:-1],g_C))
+    g_S=g_intsin(x,T,y0) 
+    #g_S=np.concatenate((g_S[:0:-1],g_S))
+    
+  #  x2=np.concatenate((-x[::-1],x))
+    
+    #g_C=np.interp()
+    #g_C=np.interp()
+
+    length=np.shape(g_C)[0]*8
+    gcos=(np.fft.fft(g_C,n=length)[::-1]+np.fft.fft(g_C,n=length))/2
+    gsin=(np.fft.fft(g_S,n=length)[::-1]-np.fft.fft(g_S,n=length))/(2j)
+
+    #length=np.shape(gcos)[0]
+    tim_fft = np.fft.fftshift(np.fft.fftfreq(length, d=st/(2*np.pi)))
+    #plt.plot(tim__,np.imag(gsin+gcos),tim__,np.real(gsin+gcos))
+    #plt.show()
+    #plt.savefig("test3.png")
+    g_fft_interp=np.interp(tim3,tim_fft,np.fft.fftshift((gcos+gsin)))*st*2
+
+    mu=-np.real(g_fft_interp[0])/np.real(g__3[0])
+    #print((g__3 + gg)[0],mu)
+    return (g__3 + g_fft_interp/mu) 
+
 @jit
 def Cw_return(te,x,T,y0):
     #np.tanh(x/(2*T*0.695028))**(-1)
@@ -434,9 +498,9 @@ def Cw_return(te,x,T,y0):
     return y_out
 
 
-@jit
+@jit(cache=True)
 def propg(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim):
-    rew=np.zeros(np.shape(tim)[0],dtype=np.complex64)
+    rew=np.zeros(len(tim),dtype=np.complex64)
     GJ=np.zeros(numG)
     decay=0
     for i in range(numG):
@@ -450,11 +514,35 @@ def propg(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim):
                 rew+=(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2-decay)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG])))
             -np.conjugate(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2-decay)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG])))))*miumod[i][j]*GJ[j]
     return rew
+
+@jit(nopython=True,cache=True)
+def propg_numba(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim):
+    rew=np.zeros(len(tim),np.complex64)
+    GJ=np.zeros(numG)
+    decay=0
+    for i in range(numG):
+        GJ[i]=bolc(G[i],G[0],T)
+    miu_max=miumod.max()
+    #CorrD=np.array(CorrD,np.complex64)  
+    for i in range(numE):
+        for j in range(numG):
+            if GJ[j]*miumod[i][j]/miu_max <1e-6:
+                continue
+            else:
+                tem=np.zeros(len(tim),np.complex64)
+                for tk in range(len(g__[:,0])):
+                    tem+=g__[tk]*(CorrD[tk,j,j]+CorrD[tk,i+numG,i+numG]-CorrD[tk,i+numG,j]-CorrD[tk,j,i+numG])
+                rew+=(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2-decay)*tim-tem)
+            -np.conjugate(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2-decay)*tim-tem)))*miumod[i][j]*GJ[j]
+    return rew
+
+
+
 @jit 
 def g33(tim3,x0,T,y0):
     g__3=np.zeros(np.shape(tim3)[0],dtype=np.complex64)
     for ii in range(np.size(tim3)):
-             g__3[ii]=2*np.trapz(Cw(tim3[ii],x0[1:],T,y0[1:]),x=x0[1:])
+             g__3[ii]=2*np.trapz(Cw(tim3[ii],x0[1:],T,y0[1:]),x=x0[1:]) # 2 times because calculating only positive x
     return g__3         
 
 @jit 
@@ -462,49 +550,49 @@ def g33_2(tim3,x0,T,y0):
     cwwww=Cw_return(tim3,x0,T,y0)
     g__3=np.zeros(np.shape(tim3)[0],dtype=np.complex64)
     for ii in range(np.size(tim3)):
-        g__3[ii]=2*np.trapz(cwwww[ii],x=x0)
+        g__3[ii]=2*np.trapz(cwwww[ii],x=x0)# 2 times because calculating only positive x
     #g__3 = integrate.cumtrapz(cwwww, x0, initial=0)
     return g__3  
 
-#@jit
+@jit(cache=True)
 def fourje2(G,A,K_,T,miumod,CorrD,Cy,Cx,snum):
     step=0.0001
     numG=len(G)
     numE=len(A)
     g__=0
-    tim=np.arange(0,step*2**12,step,dtype=np.float32)
-    tim2=np.arange(0,step*2**8,step,dtype=np.float32)
-    tim3=np.arange(step*2**8,step*2**12,step,dtype=np.float32)
-    tim3=np.concatenate((tim2,tim3))
-   # tim3=tim
-    rew=np.zeros(np.shape(tim)[0],dtype=np.complex64)
+    tim=np.arange(0,step*2**12,step,np.float32)
+    #tim2=np.arange(0,step*2**8,step,dtype=np.float32)
+    #tim3=np.arange(step*2**8,step*2**12,step,dtype=np.float32)
+   # tim3=np.concatenate((tim2,tim3))
+    tim3=tim
+    rew=np.zeros(len(tim),np.complex64)
     for zz in range(snum):
         x0=Cx[zz]
         y0=Cy[zz]
-        x0[0]=0
-        y0[0]=0
-        g__3=np.zeros(np.shape(tim3)[0],dtype=np.complex64)
-        g__t=np.zeros(np.shape(tim)[0],dtype=np.complex64)
-        g__3=g33(tim3, x0, T, y0)
+        #x0[0]=0
+        #y0[0]=0
+        g__3=np.zeros(len(tim3),np.complex64)
+        g__t=np.zeros(len(tim),np.complex64)
+        g__3=gnew(tim3,x0,T,y0) #g33(tim3, x0, T, y0)
         g__t=np.interp(tim,tim3,g__3) 
         if zz==0:
             g__=g__t
         else:
             g__=np.stack((g__,g__t))    
-
-    rew=propg(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim)
+    #print()
+    rew=propg_numba(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim)
     
     #rew=np.concatenate((rew,np.zeros(np.shape(tim)[0]*7,dtype=np.complex64)))
-    ft=np.fft.fft(rew,n=np.shape(rew)[0]*8)
-    length=np.shape(rew)[0]*8
+    ft=np.fft.fft(rew,n=len(tim)*8)
+    length=len(tim)*8
     freq = np.fft.fftfreq(length, d=step/(2*np.pi))
     
-    plt.plot(tim,np.imag(g__[0]),tim,np.real(g__[0]))
-    plt.show()
-    plt.savefig("test1.png")
-    plt.plot(tim,np.imag(g__[1]),tim,np.real(g__[1]))
-    plt.show()
-    plt.savefig("test2.png")
-    print(freq[10]-freq[11],rew[-1],freq.max())
+    # plt.plot(tim,np.imag(g__[0]),tim,np.real(g__[0]))
+    # plt.show()
+    # plt.savefig("test1.png")
+    # plt.plot(tim,np.imag(g__[1]),tim,np.real(g__[1]))
+    # plt.show()
+    # plt.savefig("test2.png")
+    # print(freq[10]-freq[11],rew[-1],freq.max())
     return freq,ft,rew
 

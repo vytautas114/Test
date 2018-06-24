@@ -61,7 +61,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,nam='BRC/1td_test'):
     
    
     Factors=condonFactors(Kvsk+1,s0)#np.zeros((virpnum+2,virpnum+2))
-
+    
     saitnum=6
     # en0=np.array([12630,13340,12540,13550,11990,12290])
     en0=np.array([11990,12290,12540,12630,13340,13550])
@@ -91,7 +91,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,nam='BRC/1td_test'):
     
     virp=deriniairev(saitnum,Kvsk) 
     v2=np.shape(virp)[0]    
-
+    #print(v2*saitnum)
     en=np.zeros(saitnum)
     for i in range(saitnum):
         en[i]=en0[i]#np.random.normal(en0[i], 50, 1)
@@ -174,22 +174,19 @@ def spektras(ax,s0,om0,T,Kvsk=2,nam='BRC/1td_test'):
         print("koeff end",datetime.datetime.now())
         #np.savetxt("corrd.txt",CorrD,fmt='%1.4f\t')
         #np.savetxt("corrcoff.txt",CorrOffd,fmt='%1.5f\t')
-        
-       
 
-
-     
         
         def K_2(a,b):
             tarp1=0
             tarp2=0
             if a==b:
-                return 0
-                kx=0
-                for i in range(numG+numE):
-                    if(a!=i):
-                        kx-=K_2(i,a)
-                return kx     
+            	raise SystemExit("should not be called in K_2. exiting")
+            	#return 0
+                # kx=0
+                # for i in range(numG+numE):
+                #     if(a!=i):
+                #         kx-=K_2(i,a)
+                # return kx     
             if a>=numG and b>=numG and (A[a-numG]-A[b-numG]!=0):
                 tem=A[b-numG]-A[a-numG]
                 if tem<0:
