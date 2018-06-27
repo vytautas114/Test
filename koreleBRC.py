@@ -1,10 +1,8 @@
 import numpy as np
 from numba import jit
 #import datetime
-num_of_proces=4
-ke=1#1#1
-kvv=1#1#10#1#
-kv=np.sqrt(kvv)#0.000000001#1#1
+#num_of_proces=4
+
 
 
 # mul=[0.7,1.2,1.1,1.6,1.95,1.95]
@@ -42,7 +40,7 @@ def ksi_opt(pa, pb, i, i_s, sg, saitnum, virpnum, virp, kff, hvirp):
         else:
            return [0,0,0]
 @jit(cache=True)
-def ksi_opt_lop(numE,numG,v2,kvv, saitnum, virpnum, virp, kff, hvirp):
+def ksi_opt_lop(numE,numG,v2,saitnum, virpnum, virp, kff, hvirp,kvv=0,kv=0 ):
     Dll1=np.zeros([numE,numE,v2,saitnum])
     Dll_1=np.zeros([numE,numE,v2,saitnum])
     if kv!=0 or kvv!=0:
@@ -75,7 +73,7 @@ def ksi2(pa,pb,pc,pd, saitnum,mul,kff):
 
 
 @jit(nopython=True,cache=True)
-def h_e(p1, p2,p3,p4, saitnum, virp,S,mul,dll1,dll_1,kff,om0,FR=True):
+def h_e(p1, p2,p3,p4, saitnum, virp,S,mul,dll1,dll_1,kff,om0,ke=1,kvv=0,kv=0,FR=True):
     sum2=0
     if kvv!=0:
         for ss in range(saitnum):
@@ -134,7 +132,7 @@ def h_e(p1, p2,p3,p4, saitnum, virp,S,mul,dll1,dll_1,kff,om0,FR=True):
 
 
 @jit
-def h_g(i, j,k, l, virp, virpnum, saitnum,mul):
+def h_g(i, j,k, l, virp, virpnum, saitnum,mul,kvv):
     summ=0
     def krok(iii,jjj,ss):
         if virp[jjj,ss]==virpnum-1:
@@ -203,7 +201,13 @@ def h_g(i, j,k, l, virp, virpnum, saitnum,mul):
 
 
 @jit(cache=True)    
-def Corrcoff_2(numG,numE,numF,B,Bf,virp,v2,virpnum,saitnum,S=0,mul=1,FR=True,OM=1,snum=1):
+def Corrcoff_2(numG,numE,numF,B,Bf,virp,v2,virpnum,saitnum,S=0,mul=1,FR=True,OM=1,snum=1,kvv=0,ke=1):
+    
+    # global ke#=1#1#1
+    # global kvv#=1#1#10#1#
+    # global kv
+    kv=np.sqrt(kvv)#0.000000001#1#1
+    #print(ke,kvv,kv)
     if np.size(OM)==1:
         OM=np.array([OM]*saitnum)
     if np.size(S)==1:
@@ -220,7 +224,7 @@ def Corrcoff_2(numG,numE,numF,B,Bf,virp,v2,virpnum,saitnum,S=0,mul=1,FR=True,OM=
     #print("22")
     Dll1=np.zeros([numE,numE,v2,saitnum])
     Dll_1=np.zeros([numE,numE,v2,saitnum])
-    Dll1,Dll_1=ksi_opt_lop(numE,numG,v2,kvv, saitnum, virpnum, virp, kff, hvirp)
+    Dll1,Dll_1=ksi_opt_lop(numE,numG,v2,saitnum, virpnum, virp, kff, hvirp,kvv=kvv,kv=kv )
     # if kv!=0 or kvv!=0:
     #     for p11 in range(numE):
     #         for p22 in range(numE):
@@ -244,8 +248,9 @@ def Corrcoff_2(numG,numE,numF,B,Bf,virp,v2,virpnum,saitnum,S=0,mul=1,FR=True,OM=
                     CorrOffd[zz,ii,jj]=0
                     CorrD[zz,ii,jj]=0    
                 if jj>=numG and ii>=numG and jj<(numG+numE) and ii<(numG+numE):
-                    CorrOffd[zz,ii,jj]=h_e(ii-numG,jj-numG,jj-numG,ii-numG,saitnum, virp,S,mul[zz],Dll1,Dll_1,kff,OM,FR)
-                    CorrD[zz,ii,jj]=h_e(ii-numG,ii-numG,jj-numG,jj-numG,saitnum, virp,S,mul[zz],Dll1,Dll_1,kff,OM,FR)
+                    CorrOffd[zz,ii,jj]=h_e(ii-numG,jj-numG,jj-numG,ii-numG,saitnum, virp,S,mul[zz],Dll1,Dll_1,kff,OM,ke=ke,kvv=kvv,kv=kv,FR=FR)
+                    CorrD[zz,ii,jj]=h_e(ii-numG,ii-numG,jj-numG,jj-numG,saitnum, virp,S,mul[zz],Dll1,Dll_1,kff,OM,ke=ke,kvv=kvv,kv=kv,FR=FR)
+                   # h_e(p1, p2,p3,p4, saitnum, virp,S,mul,dll1,dll_1,kff,om0,ke=1,kvv=0,kv=0,FR=True)
     return CorrOffd,CorrD
 
 

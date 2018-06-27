@@ -9,7 +9,7 @@ import os
 os.environ['MKL_NUM_THREADS'] = '1'
 
 #@jit
-def spektras(ax,s0,om0,T,Kvsk=2,nam='BRC/1td_test'):
+def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
 
     print(datetime.datetime.now())
     # A=np.loadtxt('SDF.txt')
@@ -126,8 +126,9 @@ def spektras(ax,s0,om0,T,Kvsk=2,nam='BRC/1td_test'):
 
     """Main loop for inhomogeneous broadening"""
 
-    for itera in range(100):
-        print(itera)
+    for itera in range(1000):
+        if itera%50==0:
+            print(itera)
         en=np.random.normal(en0, [87,87,30,30,45,60])#[0]*saitnum)#
         for i in range(saitnum*v2):
             H[i,i]=lemd[i//v2]+en[i//v2]
@@ -175,7 +176,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,nam='BRC/1td_test'):
         mul_2=np.stack((mul0,mul02))
         #S0=[0.05,0.05,0.05,0.05,0.05,0.05]
         #CorrOffd,CorrD=Corrcoff(numG,numE,numF,B,Bf,virp,v2,Kvsk+1,saitnum,S=s,mul=mul0,OM=om)
-        CorrOffd,CorrD=Corrcoff_2(numG,numE,numF,B,Bf,virp,v2,Kvsk+1,saitnum,S=s,mul=mul_2,OM=om,snum=2)
+        CorrOffd,CorrD=Corrcoff_2(numG,numE,numF,B,Bf,virp,v2,Kvsk+1,saitnum,S=s,mul=mul_2,OM=om,snum=2,kvv=kvv)
         #print("koeff end",datetime.datetime.now())
         #np.savetxt("corrd.txt",CorrD,fmt='%1.4f\t')
         #np.savetxt("corrcoff.txt",CorrOffd,fmt='%1.5f\t')
