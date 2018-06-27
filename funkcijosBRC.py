@@ -556,7 +556,7 @@ def g33_2(tim3,x0,T,y0):
 
 @jit(cache=True)
 def fourje2(G,A,K_,T,miumod,CorrD,Cy,Cx,snum):
-    step=0.0001
+    step=0.0002
     numG=len(G)
     numE=len(A)
     g__=0

@@ -117,13 +117,18 @@ def spektras(ax,s0,om0,T,Kvsk=2,nam='BRC/1td_test'):
         os.remove(nam+"_energ.txt")
     if os.path.isfile(nam+"_dip.txt"):
         os.remove(nam+"_dip.txt")    
+    if os.path.isfile(nam+"_spart.txt"):
+        os.remove(nam+"_spart.txt")        
     f_tikr=open(nam+"_tikr.txt",'a')
     f_enr=open(nam+"_energ.txt",'a')
     f_dip=open(nam+"_dip.txt",'a')
+    f_spart=open(nam+"_spart.txt",'a')
 
-    for itera in range(1):
+    """Main loop for inhomogeneous broadening"""
+
+    for itera in range(100):
         print(itera)
-        en=np.random.normal(en0, [0]*saitnum)#[87,87,30,30,45,60])#
+        en=np.random.normal(en0, [87,87,30,30,45,60])#[0]*saitnum)#
         for i in range(saitnum*v2):
             H[i,i]=lemd[i//v2]+en[i//v2]
             for m in range(saitnum):
@@ -140,7 +145,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,nam='BRC/1td_test'):
         A.tofile(f_enr,format='%1.6f')
 
 
-        print("dip start",datetime.datetime.now())
+        #print("dip start",datetime.datetime.now())
         miumod=np.zeros([saitnum*v2,v2])
         miu=np.zeros([saitnum*v2,v2,3])
         FC2=np.zeros((v2,v2,saitnum))
@@ -159,7 +164,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,nam='BRC/1td_test'):
         # kff=B.reshape(saitnum,v2,v2*saitnum)
 
 
-        print("dip end",datetime.datetime.now())
+        #print("dip end",datetime.datetime.now())
         miumod.tofile(f_dip,format='%2.4e')
         energG=np.array(G[:])
         energE=np.array(A[:])
@@ -171,7 +176,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,nam='BRC/1td_test'):
         #S0=[0.05,0.05,0.05,0.05,0.05,0.05]
         #CorrOffd,CorrD=Corrcoff(numG,numE,numF,B,Bf,virp,v2,Kvsk+1,saitnum,S=s,mul=mul0,OM=om)
         CorrOffd,CorrD=Corrcoff_2(numG,numE,numF,B,Bf,virp,v2,Kvsk+1,saitnum,S=s,mul=mul_2,OM=om,snum=2)
-        print("koeff end",datetime.datetime.now())
+        #print("koeff end",datetime.datetime.now())
         #np.savetxt("corrd.txt",CorrD,fmt='%1.4f\t')
         #np.savetxt("corrcoff.txt",CorrOffd,fmt='%1.5f\t')
 
@@ -219,7 +224,8 @@ def spektras(ax,s0,om0,T,Kvsk=2,nam='BRC/1td_test'):
                     Spartos[i,j]=K_2(i, j)
         for i in range(numG+numE):
             Spartos[i,i]-=np.sum(Spartos[:,i])      
-        print("spart end",datetime.datetime.now())        
+        #print("spart end",datetime.datetime.now())        
+        Spartos.tofile(f_spart,format='%2.9e')
         if itera==0:
             Spartos_vid=Spartos
         else:
@@ -228,7 +234,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,nam='BRC/1td_test'):
         cxt=np.stack((Cx,Cx2))
         cyt=np.stack((Cy,Cy2))
         freq,ft,resp=fourje2(G,A,Spartos,T,miumod,CorrD,cyt,cxt,2)
-        print("fft end",datetime.datetime.now())
+        #print("fft end",datetime.datetime.now())
         
         
         if itera==0:
@@ -237,7 +243,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,nam='BRC/1td_test'):
             ftsum=ft+ftsum
 
 
-    np.savetxt(nam+'_spart.txt', Spartos_vid/(itera+1),fmt='%1.9e')            
+    np.savetxt(nam+'_spart_vid.txt', Spartos_vid/(itera+1),fmt='%1.9e')            
     ft=ftsum
     apatinis=np.argwhere(10000<freq)[0][0]
     virsutinis=np.argwhere(freq<16000)[-1][0]
