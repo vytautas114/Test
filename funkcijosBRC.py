@@ -6,6 +6,20 @@ import datetime
 from numba import jit
 from scipy.integrate import simps 
 
+def vib2sait_vid2(saitnum,v2,spartos,tikr):
+    tt=np.copy(spartos[v2:,v2:])    
+    espart=np.zeros((v2*saitnum,v2*saitnum))
+    for e1 in range(v2*saitnum):
+        tt[e1,e1]=0
+    tikr2=tikr**2    
+    espart=np.einsum("np,pl,ml->nm",tikr2,tt,tikr2)
+                       
+    for e1 in range(v2*saitnum):
+        espart[e1,e1]=-np.sum(espart[:,e1])
+    return espart
+
+
+
 def rink(sk):
         ll=[]
         for i in range(sk-1):

@@ -126,7 +126,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
 
     """Main loop for inhomogeneous broadening"""
 
-    for itera in range(1000):
+    for itera in range(1):
         if itera%50==0:
             print(itera)
         en=np.random.normal(en0, [87,87,30,30,45,60])#[0]*saitnum)#
@@ -218,23 +218,27 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
 
         
 
-        Spartos=np.zeros((numG+numE,numG+numE))
+        Spartos_ex=np.zeros((numG+numE,numG+numE))
+        Spartos_sait=np.zeros((numG+numE,numG+numE))
         for i in range(numG+numE):
             for j in range(numG+numE):
                 if i!=j:
-                    Spartos[i,j]=K_2(i, j)
+                    Spartos_ex[i,j]=K_2(i, j)
         for i in range(numG+numE):
-            Spartos[i,i]-=np.sum(Spartos[:,i])      
-        #print("spart end",datetime.datetime.now())        
-        Spartos.tofile(f_spart,format='%2.9e')
+            Spartos_ex[i,i]-=np.sum(Spartos_ex[:,i])      
+        #print("spart end",datetime.datetime.now())    
+        Spartos_sait=vib2sait_vid2(saitnum,v2,Spartos_ex,B)    
+        #Spartos.tofile(f_spart,format='%2.9e')
         if itera==0:
-            Spartos_vid=Spartos
+            Spartos_sait_vid=Spartos_sait
+            Spartos_ex_vid=Spartos_ex
         else:
-            Spartos_vid+=Spartos    
+            Spartos_sait_vid+=Spartos_sait
+            Spartos_ex_vid+=Spartos_ex    
       
         cxt=np.stack((Cx,Cx2))
         cyt=np.stack((Cy,Cy2))
-        freq,ft,resp=fourje2(G,A,Spartos,T,miumod,CorrD,cyt,cxt,2)
+        freq,ft,resp=fourje2(G,A,Spartos_ex,T,miumod,CorrD,cyt,cxt,2)
         #print("fft end",datetime.datetime.now())
         
         
@@ -244,7 +248,8 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
             ftsum=ft+ftsum
 
 
-    np.savetxt(nam+'_spart_vid.txt', Spartos_vid/(itera+1),fmt='%1.9e')            
+    np.savetxt(nam+'_spart_vid.txt', Spartos_ex_vid/(itera+1),fmt='%1.9e')
+    np.savetxt(nam+'_spart_vid_sait.txt', Spartos_sait_vid/(itera+1),fmt='%2.9e')             
     ft=ftsum
     apatinis=np.argwhere(10000<freq)[0][0]
     virsutinis=np.argwhere(freq<16000)[-1][0]
