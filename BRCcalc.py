@@ -42,7 +42,7 @@ parser.add_argument("Om", type=float, help="Frequency of mode, cm^-1")
 parser.add_argument("T", type=float, help="Temperature in kelvin")
 parser.add_argument("Nq", type=int, help="Number of allowed vibrational quanta in system")
 parser.add_argument("Kvv", type=float, help="Value of kvv coupling")
-#parser.add_argument("-v", "--verbosity", action="count", default=0)
+parser.add_argument("-a", "--outp", type=str, default="")
 args = parser.parse_args()
 #answer = args.x**args.y
 
@@ -51,7 +51,7 @@ om=args.Om
 T=args.T
 virpnum2=args.Nq
 kvv=args.Kvv
-
+app_name=args.outp
 
 
 # s=float(sys.argv[1])
@@ -59,7 +59,8 @@ kvv=args.Kvv
 # T=float(sys.argv[3])
 # virpnum2=int(sys.argv[4])
 fig, ax=plt.subplots(figsize=(8,6))
-vardas='abs_vib_'+str(s)+'_'+str(om)+'_'+str(T)+'K_'+str(virpnum2)+'_'+str(kvv)
+vardas='abs_vib_'+str(s)+'_'+str(om)+'_'+str(T)+'K_'+str(virpnum2)+'_'+str(kvv)+'_'+app_name
+print(vardas)
 spektras(ax,s,om,T,Kvsk=virpnum2,kvv=kvv,nam="BRC/"+vardas)
 ax.set_xlim([10000,15000])
 

@@ -10,7 +10,7 @@ os.environ['MKL_NUM_THREADS'] = '1'
 
 #@jit
 def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
-
+    #Cx3,Cy3=np.loadtxt("2001_Valter_modes.txt").T
     print(datetime.datetime.now())
     # A=np.loadtxt('SDF.txt')
     # Cy=A[3:] #A[0]-N A[1]-X0 A[2]-dx
@@ -19,7 +19,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
     sig=0.5
     Cx=np.linspace(0.0001,2000,20000)
     
-    
+    #Cy2=np.interp(Cx,Cx3,Cy3)
     
     #S=np.trapz(y[1:]/(x[1:]*x[1:]),x[1:])/np.pi
     def GL(w,wm,gl,A):
@@ -31,8 +31,9 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
         else:
             return A*(gl/2)**2/((w-wm)**2+(gl/2)**2)
     mul0=np.array([1.95,1.95,1.10,0.70,1.2,1.6])
+    #mul02=np.array([1.95,1.95,1.10,0.70,1.2,1.6])
     mul02=np.array([1.95,1.95,0,0,0,0])
-    GL = np.vectorize(GL)
+    GL=np.vectorize(GL)
     Cy=1.7*Cx*np.pi/(sig*np.sqrt(2*np.pi))*np.exp(-(np.log(Cx/wc))**2/(2*sig**2))
     Cy2=GL(Cx,125,30,1650)
     Cx2=Cx 
@@ -58,11 +59,15 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
                 Cfact[i,j]=np.trapz(y*y1,x)
                 
         return Cfact 
-    
-   
+    saitnum=6
+    s=np.array([s0,s0,s0*0,s0*0,s0*0,s0*0])
+    FactorsN=np.zeros([saitnum,Kvsk+1,Kvsk+1])
+    for ii in range(saitnum):
+        FactorsN[ii,:,:]=condonFactors(Kvsk+1,s[ii])
+
     Factors=condonFactors(Kvsk+1,s0)#np.zeros((virpnum+2,virpnum+2))
     
-    saitnum=6
+    
     # en0=np.array([12630,13340,12540,13550,11990,12290])
     en0=np.array([11990,12290,12540,12630,13340,13550])
     om=np.array([om0,om0,om0,om0,om0,om0])
@@ -74,7 +79,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
        [0,0,0,0,0,0]]
     J=np.array(J)   
     J=J.T+J   
-    s=np.array([s0,s0,s0,s0,s0,s0])
+    
     #mul0=[0.7,1.2,1.1,1.6,1.95,1.95]
     #mul0=[1.95,1.95,1.10,0.70,1.2,1.6]
   #  lemd=L*np.ones(saitnum)#om*s+
@@ -89,7 +94,14 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
     
     nn=np.arange(0,saitnum)
     
-    virp=deriniairev(saitnum,Kvsk) 
+    virp=deriniairev(2,Kvsk) 
+
+    b=np.zeros((virp.shape[0],saitnum),dtype=int)
+    b[:,:2]=virp
+    #b[:,(3,1,2,0)]
+    virp=b
+    #virp=virp[:,(4,5,2,3,0,1)]
+    print(virp)
     v2=np.shape(virp)[0]    
     #print(v2*saitnum)
     en=np.zeros(saitnum)
@@ -109,7 +121,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
                 for m in range(saitnum):
                     H[i,j]+=om[m]*(1/2+virp[i%v2,m])
             elif i//v2!=j//v2:
-                H[i,j]=J[i//v2,j//v2]*Factors[virp[i%v2,i//v2],virp[j%v2,i//v2]]*Factors[virp[j%v2,j//v2],virp[i%v2,j//v2]]*(1 if np.all(virp[j%v2,nn[np.logical_and(nn!=j//v2,nn!=i//v2)]]==virp[i%v2,nn[np.logical_and(nn!=j//v2,nn!=i//v2)]]) else 0 )
+                H[i,j]=J[i//v2,j//v2]*FactorsN[i//v2,virp[i%v2,i//v2],virp[j%v2,i//v2]]*FactorsN[j//v2,virp[j%v2,j//v2],virp[i%v2,j//v2]]*(1 if np.all(virp[j%v2,nn[np.logical_and(nn!=j//v2,nn!=i//v2)]]==virp[i%v2,nn[np.logical_and(nn!=j//v2,nn!=i//v2)]]) else 0 )
     np.savetxt('Hamilton.out',H,fmt='%1.2f',delimiter='      ')
     if os.path.isfile(nam+"_tikr.txt"):
         os.remove(nam+"_tikr.txt")
@@ -159,7 +171,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
         for i in range(v2):
                 for j in range(v2):
                     for m in range(saitnum):
-                        FCC[i,j,m]=Factors[virp[j,m],virp[i,m]]
+                        FCC[i,j,m]=FactorsN[m,virp[j,m],virp[i,m]]
         miu=np.einsum("md,mjp,jim,ijm->pid",D,KFF,FCC,FC2)        
         miumod=np.einsum("ikj,ikj->ik",miu,miu)
         # kff=B.reshape(saitnum,v2,v2*saitnum)
@@ -196,8 +208,8 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
             if a>=numG and b>=numG and (A[a-numG]-A[b-numG]!=0):
                 tem=A[b-numG]-A[a-numG]
                 if tem<0:
-                    tarp1=-np.interp(-tem,Cx,Cy)
-                    tarp2=-np.interp(-tem,Cx2,Cy2)
+                    tarp1=np.interp(-tem,Cx,Cy)
+                    tarp2=np.interp(-tem,Cx2,Cy2)
                 else:
                     tarp1=np.interp(tem,Cx,Cy)  
                     tarp2=np.interp(tem,Cx2,Cy2)  
@@ -206,8 +218,8 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
             elif a<numG and b<numG:
                 tem=G[b]-G[a]
                 if tem<0:
-                    tarp1=-np.interp(-tem,Cx,Cy)
-                    tarp2=-np.interp(-tem,Cx2,Cy2)
+                    tarp1=np.interp(-tem,Cx,Cy)
+                    tarp2=np.interp(-tem,Cx2,Cy2)
                 else:
                     tarp1=np.interp(tem,Cx,Cy) 
                     tarp2=np.interp(tem,Cx2,Cy2)  
@@ -251,9 +263,14 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
     np.savetxt(nam+'_spart_vid.txt', Spartos_ex_vid/(itera+1),fmt='%1.9e')
     np.savetxt(nam+'_spart_vid_sait.txt', Spartos_sait_vid/(itera+1),fmt='%2.9e')             
     ft=ftsum
+    #ft=ft[freq>0]
+    #freq=freq[freq>0]
+    
+    sugertis=((np.real(ft)/max(np.real(ft)))[::-1]) 
+    sugertis=sugertis[freq>0]
+    freq=freq[freq>0]
     apatinis=np.argwhere(10000<freq)[0][0]
     virsutinis=np.argwhere(freq<16000)[-1][0]
-    sugertis=((np.real(ft)/max(np.real(ft)))[::-1]) 
     freq=freq[apatinis:virsutinis]
     sugertis=sugertis[apatinis:virsutinis]
     sugertis=sugertis/np.max(sugertis)

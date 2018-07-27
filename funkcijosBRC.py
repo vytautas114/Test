@@ -574,7 +574,7 @@ def fourje2(G,A,K_,T,miumod,CorrD,Cy,Cx,snum):
     numG=len(G)
     numE=len(A)
     g__=0
-    tim=np.arange(0,step*2**12,step,np.float32)
+    tim=np.arange(0,step*2**13,step,np.float32)
     #tim2=np.arange(0,step*2**8,step,dtype=np.float32)
     #tim3=np.arange(step*2**8,step*2**12,step,dtype=np.float32)
    # tim3=np.concatenate((tim2,tim3))
