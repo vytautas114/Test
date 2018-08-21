@@ -592,7 +592,7 @@ def fourje2(G,A,K_,T,miumod,CorrD,Cy,Cx,snum):
         if zz==0:
             g__=g__t
         else:
-            g__=np.stack((g__,g__t))    
+            g__=np.vstack((g__,g__t))    
     #print()
     rew=propg_numba(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim)
     
