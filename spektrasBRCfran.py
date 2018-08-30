@@ -1,62 +1,60 @@
 import numpy as np
 import datetime
-from funkcijosBRC import * 
+from funkcijosBRC import *
 from koreleBRC import Corrcoff_2
 from scipy.special import factorial
 import os
-#from numba import jit
+# from numba import jit
 
 os.environ['MKL_NUM_THREADS'] = '1'
 
 
-def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
-    SDF_num=3
-    Cx3,Cy3=np.loadtxt("2001_Valter_modes.txt").T
-    Cy3=np.pi*Cy3*Cx3**2/5
+def spektras(ax, s0, om0, T, Kvsk=2, kvv=0, nam='BRC/1td_test'):
+    SDF_num = 3
+    Cx3, Cy3 = np.loadtxt("2001_Valter_modes.txt").T
+    Cy3 = np.pi * Cy3 * Cx3 ** 2 / 5
     print(datetime.datetime.now())
-    #A=np.loadtxt('SDF.txt')
+    # A=np.loadtxt('SDF.txt')
     # Cy=A[3:] #A[0]-N A[1]-X0 A[2]-dx
     # Cx=np.arange(A[1],A[1]+int(A[0])*A[2],A[2])
-    wc=40
-    sig=0.5
-    Cx=np.linspace(0.0001,2000,20000)
-    #Cy3[np.logical_and(Cx3>730,Cx3<750)]=Cy3[np.logical_and(Cx3>730,Cx3<750)]*0.5
-    Cy3=np.interp(Cx,Cx3,Cy3)
-    
-    #S=np.trapz(y[1:]/(x[1:]*x[1:]),x[1:])/np.pi
-    def GL(w,wm,gl,A):
-        sg=gl/(2*np.sqrt(2*np.log(2)))
-        if w<=wm:
-            return A*np.exp(-(w-wm)**2/(2*sg**2))
-        elif w>1800:
-            return A*(gl/2)**2/((w-wm)**2+(gl/2)**2)*np.exp(-w+1800)
+    wc = 40
+    sig = 0.5
+    Cx = np.linspace(0.0001, 2000, 20000)
+    # Cy3[np.logical_and(Cx3>730,Cx3<750)]=Cy3[np.logical_and(Cx3>730,Cx3<750)]*0.5
+    Cy3 = np.interp(Cx, Cx3, Cy3)
+
+    # S=np.trapz(y[1:]/(x[1:]*x[1:]),x[1:])/np.pi
+    def GL(w, wm, gl, A):
+        sg = gl / (2 * np.sqrt(2 * np.log(2)))
+        if w <= wm:
+            return A * np.exp(- (w - wm) ** 2 / (2 * sg ** 2))
+        elif w > 1800:
+            return A * (gl / 2) ** 2 / ((w - wm) ** 2 + (gl / 2) ** 2) * np.exp(- w + 1800)
         else:
-            return A*(gl/2)**2/((w-wm)**2+(gl/2)**2)
-    mul0=np.array([1.95,1.95,1.10,0.70,1.2,1.6,1.95,1.95])
-    mul03=np.array([1.95,1.95,1.10,0.70,1.2,1.6,1.95,1.95])
-    mul02=np.array([1.95,1.95,0,0,0,0,1.95,1.95])
-    GL=np.vectorize(GL)
-    Cy=1.7*Cx*np.pi/(sig*np.sqrt(2*np.pi))*np.exp(-(np.log(Cx/wc))**2/(2*sig**2))
-    Cy2=GL(Cx,125,30,1650)
-    Cx2=Cx 
+            return A * (gl / 2) ** 2 / ((w - wm) ** 2 + (gl / 2) ** 2)
+    mul0 = np.array([1.95, 1.95, 1.10, 0.70, 1.2, 1.6, 1.95, 1.95])
+    mul03 = np.array([1.95, 1.95, 1.10, 0.70, 1.2, 1.6, 1.95, 1.95])
+    mul02 = np.array([1.95, 1.95, 0, 0, 0, 0, 1.95, 1.95])
+    GL = np.vectorize(GL)
+    Cy = 1.7 * Cx * np.pi / (sig * np.sqrt(2 * np.pi)) * np.exp(-(np.log(Cx / wc)) ** 2 / (2 * sig ** 2))
+    Cy2 = GL(Cx, 125, 30, 1650)
+    Cx2 = Cx
 
-    cxt=np.stack((Cx,Cx2,Cx))
+    cxt = np.stack((Cx, Cx2, Cx))
 
-    cyt=np.stack((Cy,Cy2,Cy3))
-    mul_stack=np.stack((mul0,mul02,mul03))
+    cyt = np.stack((Cy, Cy2, Cy3))
+    mul_stack = np.stack((mul0, mul02, mul03))
 
+    L1 = np.trapz(Cy[1:] / Cx[1:], Cx[1:]) / np.pi * mul0 * 0
+    L2 = np.trapz(Cy2[1:] / Cx2[1:], Cx2[1:]) / np.pi * mul02 * 0
 
+    def condonFactors(levels, s):
+        Cfact = np.zeros((levels, levels))
 
-    L1=np.trapz(Cy[1:]/Cx[1:],Cx[1:])/np.pi*mul0*0
-    L2=np.trapz(Cy2[1:]/Cx2[1:],Cx2[1:])/np.pi*mul02*0
-
-    def condonFactors(levels,s):
-        Cfact=np.zeros((levels,levels))
-        def qwave(x,n):
-
-            tem=np.zeros(n+1)
-            tem[n]=1
-            return np.polynomial.hermite.hermval(x,tem)\
+        def qwave(x, n):
+            tem = np.zeros(n + 1)
+            tem[n] = 1
+            return np.polynomial.hermite.hermval(x, tem)\
             *np.exp(-x**2/2)*np.power((1/np.pi),1/4)*1/np.sqrt(2**n*factorial(n,exact=True))
 
         x=np.linspace(-10,10,3000)
@@ -92,8 +90,8 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
     J=np.array(J)   
     J=J.T+J   
     print(J)
-    #mul0=[0.7,1.2,1.1,1.6,1.95,1.95]
-    #mul0=[1.95,1.95,1.10,0.70,1.2,1.6]
+    # mul0=[0.7,1.2,1.1,1.6,1.95,1.95]
+    # mul0=[1.95,1.95,1.10,0.70,1.2,1.6]
   #  lemd=L*np.ones(saitnum)#om*s+
     lemd=L1+L2
     D=np.array([[-0.6611,-0.4041,-0.1110],
@@ -114,15 +112,15 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
 
     b=np.zeros((virp.shape[0],saitnum),dtype=int)
     b[:,:4]=virp
-    #b[:,(3,1,2,0)]
+    # b[:,(3,1,2,0)]
     virp=b
     virp=virp[:,(0,1,4,5,6,7,2,3)]
     print(virp)
     v2=np.shape(virp)[0]    
-    #print(v2*saitnum)
+    # print(v2*saitnum)
     en=np.zeros(saitnum)
     for i in range(saitnum):
-        en[i]=en0[i]#np.random.normal(en0[i], 50, 1)
+        en[i]=en0[i]# np.random.normal(en0[i], 50, 1)
         
     G=np.zeros(v2)
     for i in range(v2):
@@ -150,7 +148,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
     f_tikr=open(nam+"_tikr.txt",'a')
     f_enr=open(nam+"_energ.txt",'a')
     f_dip=open(nam+"_dip.txt",'a')
-    #f_spart=open(nam+"_spart.txt",'a')
+    # f_spart=open(nam+"_spart.txt",'a')
 
     """Main loop for inhomogeneous broadening"""
 
@@ -174,7 +172,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
         A.tofile(f_enr,format='%1.6f')
 
 
-        #print("dip start",datetime.datetime.now())
+        # print("dip start",datetime.datetime.now())
         miumod=np.zeros([saitnum*v2,v2])
         miu=np.zeros([saitnum*v2,v2,3])
         FC2=np.zeros((v2,v2,saitnum))
@@ -193,7 +191,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
         # kff=B.reshape(saitnum,v2,v2*saitnum)
 
 
-        #print("dip end",datetime.datetime.now())
+        # print("dip end",datetime.datetime.now())
         miumod.tofile(f_dip,format='%2.4e')
         energG=np.array(G[:])
         energE=np.array(A[:])
@@ -202,21 +200,21 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
         numF=0
         Bf=[0]
         
-        #S0=[0.05,0.05,0.05,0.05,0.05,0.05]
-        #CorrOffd,CorrD=Corrcoff(numG,numE,numF,B,Bf,virp,v2,Kvsk+1,saitnum,S=s,mul=mul0,OM=om)
+        # S0=[0.05,0.05,0.05,0.05,0.05,0.05]
+        # CorrOffd,CorrD=Corrcoff(numG,numE,numF,B,Bf,virp,v2,Kvsk+1,saitnum,S=s,mul=mul0,OM=om)
         CorrOffd,CorrD=Corrcoff_2(numG,numE,numF,B,Bf,virp,v2,Kvsk+1,saitnum,S=s,mul=mul_stack,OM=om,snum=SDF_num,kvv=kvv)
-        #print("koeff end",datetime.datetime.now())
-        #np.savetxt("corrd.txt",CorrD,fmt='%1.4f\t')
-        #np.savetxt("corrcoff.txt",CorrOffd,fmt='%1.5f\t')
+        # print("koeff end",datetime.datetime.now())
+        # np.savetxt("corrd.txt",CorrD,fmt='%1.4f\t')
+        # np.savetxt("corrcoff.txt",CorrOffd,fmt='%1.5f\t')
 
         
         def K_2(a,b,SDF_num=SDF_num):
             
             tarp=np.zeros(SDF_num)
-            #tarp2=0
+            # tarp2=0
             if a==b:
             	raise SystemExit("should not be called in K_2. exiting")
-            	#return 0
+            	# return 0
                 # kx=0
                 # for i in range(numG+numE):
                 #     if(a!=i):
@@ -236,7 +234,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
                     # tarp1=np.interp(tem,Cx,Cy)  
                     # tarp2=np.interp(tem,Cx2,Cy2)  
          
-                #return np.abs((tarp1*CorrOffd[0,b,a]+tarp2*CorrOffd[1,b,a])*(np.tanh((tem)/(2*T*0.695028))**(-1)+1)) #if (A[a-numG]-A[b-numG])>om[0]-1 and (A[a-numG]-A[b-numG])<om[0]+1 else 0
+                # return np.abs((tarp1*CorrOffd[0,b,a]+tarp2*CorrOffd[1,b,a])*(np.tanh((tem)/(2*T*0.695028))**(-1)+1)) #if (A[a-numG]-A[b-numG])>om[0]-1 and (A[a-numG]-A[b-numG])<om[0]+1 else 0
                 return np.abs(np.dot(tarp[:],CorrOffd[:,b,a])*(np.tanh((tem)/(2*T*0.695028))**(-1)+1))
 
             elif a<numG and b<numG:
@@ -250,7 +248,7 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
                 for n_spek in range(SDF_num):
                     tarp[n_spek]=np.interp(np.abs(tem),cxt[n_spek],cyt[n_spek])    
            
-                #return np.abs((tarp1*CorrOffd[0,b,a]+tarp2*CorrOffd[1,b,a])*(np.tanh((tem)/(2*T*0.695028))**(-1)+1)) if tem!=0 else 0 #if (G[a]-G[b])>om[0]-1 #and (G[a]-G[b])<om[0]+1 else 0
+                # return np.abs((tarp1*CorrOffd[0,b,a]+tarp2*CorrOffd[1,b,a])*(np.tanh((tem)/(2*T*0.695028))**(-1)+1)) if tem!=0 else 0 #if (G[a]-G[b])>om[0]-1 #and (G[a]-G[b])<om[0]+1 else 0
                 return np.abs(np.dot(tarp[:],CorrOffd[:,b,a])*(np.tanh((tem)/(2*T*0.695028))**(-1)+1)) if tem!=0 else 0
             else:
                 return 0
@@ -265,9 +263,9 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
                     Spartos_ex[i,j]=K_2(i, j)
         for i in range(numG+numE):
             Spartos_ex[i,i]-=np.sum(Spartos_ex[:,i])      
-        #print("spart end",datetime.datetime.now())    
+        # print("spart end",datetime.datetime.now())    
         Spartos_sait=vib2sait_vid2(saitnum,v2,Spartos_ex,B)    
-        #Spartos.tofile(f_spart,format='%2.9e')
+        # Spartos.tofile(f_spart,format='%2.9e')
         if itera==0:
             Spartos_sait_vid=Spartos_sait
             Spartos_ex_vid=Spartos_ex
@@ -275,9 +273,9 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
             Spartos_sait_vid+=Spartos_sait
             Spartos_ex_vid+=Spartos_ex    
       
-        #print(CorrD.shape,cyt.shape,cxt.shape,SDF_num)
+        # print(CorrD.shape,cyt.shape,cxt.shape,SDF_num)
         freq,ft,resp=fourje2(G,A,Spartos_ex,T,miumod,CorrD,cyt,cxt, SDF_num)
-        #print("fft end",datetime.datetime.now())
+        # print("fft end",datetime.datetime.now())
         
         
         if itera==0:
@@ -289,8 +287,8 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
     np.savetxt(nam+'_spart_vid.txt', Spartos_ex_vid/(itera+1),fmt='%1.9e')
     np.savetxt(nam+'_spart_vid_sait.txt', Spartos_sait_vid/(itera+1),fmt='%2.9e')             
     ft=ftsum
-    #ft=ft[freq>0]
-    #freq=freq[freq>0]
+    # ft=ft[freq>0]
+    # freq=freq[freq>0]
     
     sugertis=((np.real(ft)/max(np.real(ft)))[::-1]) 
     sugertis=sugertis[freq>0]
@@ -299,12 +297,12 @@ def spektras(ax,s0,om0,T,Kvsk=2,kvv=0,nam='BRC/1td_test'):
     virsutinis=np.argwhere(freq<16000)[-1][0]
     freq=freq[apatinis:virsutinis]
     sugertis=sugertis[apatinis:virsutinis]
-    sugertis=sugertis/np.max(sugertis)
-    rezz=np.stack((freq,sugertis),axis=-1)
-    ax.plot(freq,sugertis,'k',lw=1)    
-    np.savetxt(nam+'_rezul.txt', rezz)
-    ax.set_xlim([9000,15990])
-    ax.set_ylim([0,1.1])
-    ax.text(12900,0.6,'$\omega_v$ = %.f $cm^{-1}$\nS = %.5f' % (om[0],s[0]),style='italic',fontsize=13)
+    sugertis = sugertis / np.max(sugertis)
+    rezz = np.stack((freq, sugertis), axis=-1)
+    ax.plot(freq, sugertis, 'k', lw=1)
+    np.savetxt(nam + '_rezul.txt', rezz)
+    ax.set_xlim([9000, 15990])
+    ax.set_ylim([0, 1.1])
+    ax.text(12900, 0.6, '$\omega_v$ = %.f $cm^{-1}$\nS = %.5f' % (om[0], s[0]), style='italic', fontsize=13)
     print(datetime.datetime.now())
-   
+

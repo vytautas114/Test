@@ -2,11 +2,11 @@ import subprocess
 import matplotlib.pyplot as plt
 import numpy as np
 from itertools import product
-import datetime
+#import datetime
 from numba import jit
-from scipy.integrate import simps 
+from scipy.integrate import simps
 
-def vib2sait_vid2(saitnum,v2,spartos,tikr):
+def vib2sait_vid2(saitnum, v2, spartos, tikr):
     tt=np.copy(spartos[v2:,v2:])    
     espart=np.zeros((v2*saitnum,v2*saitnum))
     for e1 in range(v2*saitnum):
@@ -551,56 +551,57 @@ def propg_numba(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim):
     return rew
 
 
-
-@jit 
-def g33(tim3,x0,T,y0):
-    g__3=np.zeros(np.shape(tim3)[0],dtype=np.complex64)
+@jit
+def g33(tim3, x0, T, y0):
+    g__3 = np.zeros(np.shape(tim3)[0], dtype=np.complex64)
     for ii in range(np.size(tim3)):
-             g__3[ii]=2*np.trapz(Cw(tim3[ii],x0[1:],T,y0[1:]),x=x0[1:]) # 2 times because calculating only positive x
-    return g__3         
+        g__3[ii] = 2 * np.trapz(Cw(tim3[ii], x0[1:], T, y0[1:]), x=x0[1:])  # 2 times because calculating only positive x
+    return g__3
 
-@jit 
-def g33_2(tim3,x0,T,y0):
-    cwwww=Cw_return(tim3,x0,T,y0)
-    g__3=np.zeros(np.shape(tim3)[0],dtype=np.complex64)
+
+@jit
+def g33_2(tim3, x0, T, y0):
+    cwwww = Cw_return(tim3, x0, T, y0)
+    g__3 = np.zeros(np.shape(tim3)[0], dtype=np.complex64)
     for ii in range(np.size(tim3)):
-        g__3[ii]=2*np.trapz(cwwww[ii],x=x0)# 2 times because calculating only positive x
-    #g__3 = integrate.cumtrapz(cwwww, x0, initial=0)
-    return g__3  
+        g__3[ii] = 2 * np.trapz(cwwww[ii], x=x0)  # 2 times because calculating only positive x
+    # g__3 = integrate.cumtrapz(cwwww, x0, initial=0)
+    return g__3
+
 
 @jit(cache=True)
-def fourje2(G,A,K_,T,miumod,CorrD,Cy,Cx,snum):
-    step=0.0002
-    numG=len(G)
-    numE=len(A)
-    g__=0
-    tim=np.arange(0,step*2**13,step,np.float32)
-    #tim2=np.arange(0,step*2**8,step,dtype=np.float32)
-    #tim3=np.arange(step*2**8,step*2**12,step,dtype=np.float32)
-   # tim3=np.concatenate((tim2,tim3))
-    tim3=tim
-    rew=np.zeros(len(tim),np.complex64)
+def fourje2(G, A, K_, T, miumod, CorrD, Cy, Cx, snum):
+    step = 0.0002
+    numG = len(G)
+    numE = len(A)
+    g__ = 0
+    tim = np.arange(0, step * 2 ** 13, step, np.float32)
+    # tim2=np.arange(0,step*2**8,step,dtype=np.float32)
+    # tim3=np.arange(step*2**8,step*2**12,step,dtype=np.float32)
+    # tim3=np.concatenate((tim2,tim3))
+    tim3 = tim
+    rew = np.zeros(len(tim), np.complex64)
     for zz in range(snum):
-        x0=Cx[zz]
-        y0=Cy[zz]
-        #x0[0]=0
-        #y0[0]=0
-        g__3=np.zeros(len(tim3),np.complex64)
-        g__t=np.zeros(len(tim),np.complex64)
-        g__3=gnew(tim3,x0,T,y0) #g33(tim3, x0, T, y0)
-        g__t=np.interp(tim,tim3,g__3) 
-        if zz==0:
-            g__=g__t
+        x0 = Cx[zz]
+        y0 = Cy[zz]
+        # x0[0]=0
+        # y0[0]=0
+        g__3 = np.zeros(len(tim3), np.complex64)
+        g__t = np.zeros(len(tim), np.complex64)
+        g__3 = gnew(tim3, x0, T, y0)  # g33(tim3, x0, T, y0)
+        g__t = np.interp(tim, tim3, g__3)
+        if zz == 0:
+            g__ = g__t
         else:
-            g__=np.vstack((g__,g__t))    
-    #print()
-    rew=propg_numba(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim)
-    
-    #rew=np.concatenate((rew,np.zeros(np.shape(tim)[0]*7,dtype=np.complex64)))
-    ft=np.fft.fft(rew,n=len(tim)*8)
-    length=len(tim)*8
-    freq = np.fft.fftfreq(length, d=step/(2*np.pi))
-    
+            g__ = np.vstack((g__, g__t))
+    # print()
+    rew = propg_numba(numG, numE, G, A, T, miumod, K_, CorrD, g__, tim)
+
+    # rew=np.concatenate((rew,np.zeros(np.shape(tim)[0]*7,dtype=np.complex64)))
+    ft = np.fft.fft(rew, n=len(tim) * 8)
+    length = len(tim) * 8
+    freq = np.fft.fftfreq(length, d=step / (2 * np.pi))
+
     # plt.plot(tim,np.imag(g__[0]),tim,np.real(g__[0]))
     # plt.show()
     # plt.savefig("test1.png")
@@ -608,5 +609,4 @@ def fourje2(G,A,K_,T,miumod,CorrD,Cy,Cx,snum):
     # plt.show()
     # plt.savefig("test2.png")
     # print(freq[10]-freq[11],rew[-1],freq.max())
-    return freq,ft,rew
-
+    return freq, ft, rew
