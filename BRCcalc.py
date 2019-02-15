@@ -11,7 +11,7 @@ from spektrasBRCfran import spektras
 # from scipy.interpolate import griddata
 # import datetime
 # import subprocess
-mpl.use('Agg')
+#mpl.use('Agg')
 
 
 cdict3 = {'red': ((0.0, 0.0, 0.0),
@@ -33,7 +33,7 @@ cdict3 = {'red': ((0.0, 0.0, 0.0),
                    (1.0, 0.0, 0.0))
           }
 
-plt.register_cmap(name='BlueRed3', data=cdict3)
+#plt.register_cmap(name='BlueRed3', data=cdict3)
 
 # s,om,j,T,virpnum2=[float(i) for i in (sys.argv[1:])]
 parser = argparse.ArgumentParser()
@@ -61,11 +61,11 @@ app_name = args.outp
 fig, ax = plt.subplots(figsize=(8, 6))
 vardas = 'abs_vib_' + str(s) + '_' + str(om) + '_' + str(T) + 'K_' + str(virpnum2) + '_' + str(kvv) + '_' + app_name
 print(vardas)
-spektras(ax, s, om, T, Kvsk=virpnum2, kvv=kvv, nam="BRC/" + vardas)
+spektras(ax, s, om, T, Kvsk=virpnum2, kvv=kvv, nam="BRC_scan/" + vardas)
 ax.set_xlim([10000, 15000])
 
 
-fig.savefig('BRCspekt/' + vardas + '.png', dpi=300)
+fig.savefig('BRC_scan/' + vardas + '.png', dpi=300)
 # cmd = ['cp outr.txt spekt/'+vardas+'_redfieldrez.txt']
 # subprocess.Popen(cmd, shell=True).wait()
 # cmd = ['cp outasr.txt spekt/'+vardas+'_redfieldout.txt']

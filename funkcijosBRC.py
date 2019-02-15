@@ -432,7 +432,7 @@ def ctan(x,T):
     return (1+np.exp(-x/(T*0.695028)))/(1-np.exp(-x/(T*0.695028)))
 
 
-@jit(cache=True,nopython=True)
+@jit#(cache=True,nopython=True)
 def Cw(te,x,T,y0):
     #np.tanh(x/(2*T*0.695028))**(-1)
     #y=np.zeros(np.size(x0))
@@ -492,7 +492,7 @@ def gnew(tim3,x,T,y0):
     #plt.plot(tim__,np.imag(gsin+gcos),tim__,np.real(gsin+gcos))
     #plt.show()
     #plt.savefig("test3.png")
-    g_fft_interp=np.interp(tim3,tim_fft,np.fft.fftshift((gcos+gsin)))*st*2
+    g_fft_interp=np.interp(tim3,tim_fft,np.fft.fftshift(gcos+gsin))*st*2
 
     mu=-np.real(g_fft_interp[0])/np.real(g__3[0])
     #print((g__3 + gg)[0],mu)
@@ -531,7 +531,7 @@ def propg(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim):
 
 @jit(nopython=True,cache=True)
 def propg_numba(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim):
-    rew=np.zeros(len(tim),np.complex64)
+    rew=np.zeros(len(tim),np.complex128)
     GJ=np.zeros(numG)
     decay=0
     for i in range(numG):
@@ -543,7 +543,7 @@ def propg_numba(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim):
             if GJ[j]*miumod[i][j]/miu_max <1e-6:
                 continue
             else:
-                tem=np.zeros(len(tim),np.complex64)
+                tem=np.zeros(len(tim),np.complex128)
                 for tk in range(len(g__[:,0])):
                     tem+=g__[tk]*(CorrD[tk,j,j]+CorrD[tk,i+numG,i+numG]-CorrD[tk,i+numG,j]-CorrD[tk,j,i+numG])
                 rew+=(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2-decay)*tim-tem)
@@ -589,7 +589,7 @@ def fourje2(G, A, K_, T, miumod, CorrD, Cy, Cx, snum):
         g__3 = np.zeros(len(tim3), np.complex64)
         g__t = np.zeros(len(tim), np.complex64)
         g__3 = gnew(tim3, x0, T, y0)  # g33(tim3, x0, T, y0)
-        g__t = np.interp(tim, tim3, g__3)
+        g__t = g__3#np.interp(tim, tim3, g__3)
         if zz == 0:
             g__ = g__t
         else:

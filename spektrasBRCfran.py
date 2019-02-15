@@ -4,13 +4,17 @@ from funkcijosBRC import *
 from koreleBRC import Corrcoff_2
 from scipy.special import factorial
 import os
+
+import time
+np.random.seed(np.int(time.time()))
+
 # from numba import jit
 
 os.environ['MKL_NUM_THREADS'] = '1'
 
 
-def spektras(ax, s0, om0, T, Kvsk=2, kvv=0, nam='BRC/1td_test'):
-    SDF_num = 3
+def spektras(ax, s0, om0, T, Kvsk=2, kvv=0, nam='BRC_scan/1td_test'):
+    SDF_num = 2
     Cx3, Cy3 = np.loadtxt("2001_Valter_modes.txt").T
     Cy3 = np.pi * Cy3 * Cx3 ** 2 / 5
     print(datetime.datetime.now())
@@ -32,9 +36,9 @@ def spektras(ax, s0, om0, T, Kvsk=2, kvv=0, nam='BRC/1td_test'):
             return A * (gl / 2) ** 2 / ((w - wm) ** 2 + (gl / 2) ** 2) * np.exp(- w + 1800)
         else:
             return A * (gl / 2) ** 2 / ((w - wm) ** 2 + (gl / 2) ** 2)
-    mul0 = np.array([1.95, 1.95, 1.10, 0.70, 1.2, 1.6, 1.95, 1.95])
-    mul03 = np.array([1.95, 1.95, 1.10, 0.70, 1.2, 1.6, 1.95, 1.95])
-    mul02 = np.array([1.95, 1.95, 0, 0, 0, 0, 1.95, 1.95])
+    mul0 = np.array([1.95, 1.95, 1.10, 0.70, 1.2, 1.6])
+    mul03 = np.array([1.95, 1.95, 1.10, 0.70, 1.2, 1.6])
+    mul02 = np.array([1.95, 1.95, 0, 0, 0, 0])
     GL = np.vectorize(GL)
     Cy = 1.7 * Cx * np.pi / (sig * np.sqrt(2 * np.pi)) * np.exp(-(np.log(Cx / wc)) ** 2 / (2 * sig ** 2))
     Cy2 = GL(Cx, 125, 30, 1650)
@@ -67,8 +71,9 @@ def spektras(ax, s0, om0, T, Kvsk=2, kvv=0, nam='BRC/1td_test'):
                 Cfact[i,j]=np.trapz(y*y1,x)
                 
         return Cfact 
-    saitnum=8
-    s=np.array([s0,s0,s0*0,s0*0,s0*0,s0*0,s0,s0])
+    saitnum=6
+    s=np.array([s0,s0,s0,s0,s0,s0])*mul03
+    print(s)
     FactorsN=np.zeros([saitnum,Kvsk+1,Kvsk+1])
     for ii in range(saitnum):
         FactorsN[ii,:,:]=condonFactors(Kvsk+1,s[ii])
@@ -77,19 +82,17 @@ def spektras(ax, s0, om0, T, Kvsk=2, kvv=0, nam='BRC/1td_test'):
     
     
     # en0=np.array([12630,13340,12540,13550,11990,12290])
-    en0=np.array([11880,12180,12488,12580,13340,13550,10600,9120])
+    en0=np.array([11990,12290,12540,12630,13340,13550])
     om=np.array([om0]*saitnum)
-    J=[[0,650,-20,-119,27,-11,0,0],
-       [0,0,-119,-17,-9,24,50,0],
-       [0,0,0,18,-7,104,0,0],
-       [0,0,0,0,104,-7,0,0],
-       [0,0,0,0,0,3,0,0],
-       [0,0,0,0,0,0,0,0],
-       [0,0,0,0,0,0,0,50],
-       [0,0,0,0,0,0,0,0]]
+    J=[[0,650,-20,-119,27,-11],
+       [0,0,-119,-17,-9,24],
+       [0,0,0,18,-7,104],
+       [0,0,0,0,104,-7],
+       [0,0,0,0,0,3],
+       [0,0,0,0,0,0]]
     J=np.array(J)   
     J=J.T+J   
-    print(J)
+    #print(J)
     # mul0=[0.7,1.2,1.1,1.6,1.95,1.95]
     # mul0=[1.95,1.95,1.10,0.70,1.2,1.6]
   #  lemd=L*np.ones(saitnum)#om*s+
@@ -99,23 +102,21 @@ def spektras(ax, s0, om0, T, Kvsk=2, kvv=0, nam='BRC/1td_test'):
                 [0.9733,-0.1161,-0.1824],
                 [-0.7794,-0.5123,-0.3631],
                 [-0.0096,0.6633,0.1238],
-                [-0.2151,0.2293,0.5958],
-                [0,0,0],
-                [0,0,0]])
+                [-0.2151,0.2293,0.5958]])
    
-    D[(3),:]*=1.05
-    D[(0,1,2),:]=D[(0,1,2),:]*0.87
-    D[(4,5),:]*=0.97
+    # D[(3),:]*=1.05
+    # D[(0,1,2),:]=D[(0,1,2),:]*0.87
+    # D[(4,5),:]*=0.97
     nn=np.arange(0,saitnum)
     
-    virp=deriniairev(4,Kvsk) 
+    virp=deriniairev(6,Kvsk) 
 
-    b=np.zeros((virp.shape[0],saitnum),dtype=int)
-    b[:,:4]=virp
-    # b[:,(3,1,2,0)]
-    virp=b
-    virp=virp[:,(0,1,4,5,6,7,2,3)]
-    print(virp)
+    # b=np.zeros((virp.shape[0],saitnum),dtype=int)
+    # b[:,:4]=virp
+    # # b[:,(3,1,2,0)]
+    # virp=b
+    # virp=virp[:,(0,1,4,5,6,7,2,3)]
+    #print(virp)
     v2=np.shape(virp)[0]    
     # print(v2*saitnum)
     en=np.zeros(saitnum)
@@ -153,9 +154,9 @@ def spektras(ax, s0, om0, T, Kvsk=2, kvv=0, nam='BRC/1td_test'):
     """Main loop for inhomogeneous broadening"""
 
     for itera in range(1000):
-        if itera%200==0:
+        if itera%100==0:
             print(itera)
-        en=np.random.normal(en0, [87,87,30,30,45,60,87,87])#[0]*saitnum)#
+        en=np.random.normal(en0, [87,87,30,30,45,60])#[0]*saitnum)#
         for i in range(saitnum*v2):
             H[i,i]=lemd[i//v2]+en[i//v2]
             for m in range(saitnum):
@@ -303,6 +304,6 @@ def spektras(ax, s0, om0, T, Kvsk=2, kvv=0, nam='BRC/1td_test'):
     np.savetxt(nam + '_rezul.txt', rezz)
     ax.set_xlim([9000, 15990])
     ax.set_ylim([0, 1.1])
-    ax.text(12900, 0.6, '$\omega_v$ = %.f $cm^{-1}$\nS = %.5f' % (om[0], s[0]), style='italic', fontsize=13)
+    ax.text(12900, 0.6, '$\omega_v$ = %.f $cm^{-1}$\nS = %.5f' % (om[0], s0), style='italic', fontsize=13)
     print(datetime.datetime.now())
 
