@@ -7,13 +7,13 @@ from numba import jit
 from scipy.integrate import simps
 
 def vib2sait_vid2(saitnum, v2, spartos, tikr):
-    tt=np.copy(spartos[v2:,v2:])    
+    tt=np.copy(spartos[v2:,v2:])
     espart=np.zeros((v2*saitnum,v2*saitnum))
     for e1 in range(v2*saitnum):
         tt[e1,e1]=0
-    tikr2=tikr**2    
+    tikr2=tikr**2
     espart=np.einsum("np,pl,ml->nm",tikr2,tt,tikr2)
-                       
+
     for e1 in range(v2*saitnum):
         espart[e1,e1]=-np.sum(espart[:,e1])
     return espart
@@ -24,12 +24,12 @@ def rink(sk):
         ll=[]
         for i in range(sk-1):
             for j in range(i+1,sk):
-                ll.append([i,j])        
-        return ll    
+                ll.append([i,j])
+        return ll
 
 def  lor(x,x0,H):
-    return 1/3.1415*(1/2*H)/((x-x0)*(x-x0)+(1/2*H)*(1/2*H))    
-    
+    return 1/3.1415*(1/2*H)/((x-x0)*(x-x0)+(1/2*H)*(1/2*H))
+
 def makeinput(EnergG, EnergE, dipol,T,CorrD,CorrOffd):
     numG=np.size(EnergG)
     numE=np.size(EnergE)
@@ -49,7 +49,7 @@ def makeinput(EnergG, EnergE, dipol,T,CorrD,CorrOffd):
     file.write('#from, to, dipoles \n')
     for i in dipol:
         file.write('%d %d %.6f %.6f %.5f\n' % (i[0],i[1],i[2],i[3],i[4]))
-        
+
     file.write('#bath\n#temperature\n')
     file.write('%f\n'% T)
     file.write('#ZPL\n')
@@ -64,7 +64,7 @@ def makeinput(EnergG, EnergE, dipol,T,CorrD,CorrOffd):
             #    file.write('1 ')
             #else:
             #    file.write('0 ')
-        file.write('\n')    
+        file.write('\n')
     file.write('#diag\n')
     for ii in range(numG+numE):
         for jj in range(ii+1):
@@ -73,18 +73,18 @@ def makeinput(EnergG, EnergE, dipol,T,CorrD,CorrOffd):
             #    file.write('1 ')
             #else:
             #    file.write('0 ')
-        file.write('\n')    
-        
+        file.write('\n')
+
     file.write('1 0 0\n1 0 0\n')
-    
+
     file.write('0\n')
-    
+
     file.write('10000\n')
     file.write('20000\n')
     file.write('10000\n')
 
     file.close()
-    
+
 def makeinput2d(EnergG, EnergE,EnergF, dipol,T,CorrD,CorrOffd,expattern):
     numG=np.size(EnergG)
     numE=np.size(EnergE)
@@ -101,14 +101,14 @@ def makeinput2d(EnergG, EnergE,EnergF, dipol,T,CorrD,CorrOffd,expattern):
         file.write('%.3f\n'% i)
     file.write('\n')
     for i in EnergF:
-        file.write('%.3f\n'% i)    
+        file.write('%.3f\n'% i)
     file.write('\n')
     file.write('#number of dipoles\n')
     file.write('%d\n' % np.size(dipol[:,0]))
     file.write('#from, to, dipoles \n')
     for i in dipol:
         file.write('%d %d %.6f %.6f %.6f\n' % (i[0],i[1],i[2],i[3],i[4]))
-        
+
     file.write('#bath\n#temperature\n')
     file.write('%f\n'% T)
     file.write('#ZPL\n')
@@ -123,7 +123,7 @@ def makeinput2d(EnergG, EnergE,EnergF, dipol,T,CorrD,CorrOffd,expattern):
             #    file.write('1 ')
             #else:
             #    file.write('0 ')
-        file.write('\n')    
+        file.write('\n')
     file.write('#diag\n')
     for ii in range(numG+numE+numF):
         for jj in range(ii+1):
@@ -132,18 +132,18 @@ def makeinput2d(EnergG, EnergE,EnergF, dipol,T,CorrD,CorrOffd,expattern):
             #    file.write('1 ')
             #else:
             #    file.write('0 ')
-        file.write('\n') 
+        file.write('\n')
     file.write('#dummy zero\n0\n')
-    
+
     file.write("# pattern\n")
-    
+
     file.write(str(expattern)+'\n')
-    
+
     file.write('#WTW file\n2\n')
-        
+
     file.write('1 0 0\n1 0 0\n')
     file.write('1 0 0\n1 0 0\n')
-    
+
     file.write('0\n')
     file.write('#Fre1\n')
     file.write('-11000\n')
@@ -151,17 +151,17 @@ def makeinput2d(EnergG, EnergE,EnergF, dipol,T,CorrD,CorrOffd,expattern):
     file.write('#Fre2\n')
     file.write('11000\n')
     file.write('14000\n')
-    
+
     file.write('100\n')
-    
+
     file.write("delay t2: one fs = 0.0001884\n")
     file.write("%f" % 0)
-    
-    
+
+
 
     file.close()
 
-    
+
 
 def deriniai2(numM,numL):
     class unique_element:
@@ -191,7 +191,7 @@ def deriniai2(numM,numL):
     for i in range(numL):
         for j in range(i+1):
             a += list(perm_unique([j,i]+[0]*(numM-2)))
-    return np.array(a)        
+    return np.array(a)
 
 def visideriniai(saitnum, virpnum):
     maxRange = np.ones(saitnum,dtype=int)*virpnum
@@ -260,8 +260,8 @@ def deriniairev(numM,numKv):
                         for k3 in range(k2+1):
                             for k4 in range(k3+1):
                                 if i+j+k+k2+k3+k4<=numKv:
-                                    a += list(perm_unique([j,i,k,k2,k3,k4]+[0]*(numM-6)))                                                                        
-    return np.array(a)        	
+                                    a += list(perm_unique([j,i,k,k2,k3,k4]+[0]*(numM-6)))
+    return np.array(a)
 
 
 #def lor(x, x0, H):
@@ -286,7 +286,7 @@ def fur(E_eg,G_def,inh):
 def SDF(om,om_c,a,s):
     return s*np.pi*om*(om/om_c)**(a-1)*np.exp(-om/om_c)
 def SDFDEB(om,gama,s):
-    
+
     if s==0:
         lamb=0
     else:
@@ -354,15 +354,15 @@ def Redfield(om,s,j,temp,ax=plt):
     file.write('23000\n\n')
 
     file.close()
-    
-    
+
+
     #cmd = ['/run/myscript', '--arg', 'value']
     cmd = [r'../uqcfp/bin/tba.calculator_abs_excitons inputmod.txt outr.txt > outasr.txt']
     subprocess.Popen(cmd, shell=True).wait()
     #for line in p.stdout:
     #    print line
     #p.wait()
-    
+
     #!../uqcfp/bin/tba.calculator_abs_excitons inputmod.txt outr.txt > outasr.txt
     #!rm *.wrk
     l = []
@@ -375,7 +375,7 @@ def Redfield(om,s,j,temp,ax=plt):
         else:
             l.append(line.split())
     l=np.array(l).astype(np.float)
-    l=l.transpose() 
+    l=l.transpose()
     ax.plot(l[0],l[1]/max(l[1]),'r')
     return L
 
@@ -411,7 +411,7 @@ def fourje(G,A,K_,gfun2,T,miumod,CorrD,Cy,Cx):
          g__3[index[0]]=2*np.trapz(Cw(te,x0),x=x0)
     #      if index[0]%10==0:
     #          print(index[0],g__3[index[0]],gfun2(te))
-    g__=np.interp(tim,tim3,g__3)         
+    g__=np.interp(tim,tim3,g__3)
     # for index, te in np.ndenumerate(tim):
     #      g__[index[0]]=2*np.trapz(Cw(te,x0),x=x0)
     #g__=gfun2(tim)
@@ -421,7 +421,7 @@ def fourje(G,A,K_,gfun2,T,miumod,CorrD,Cy,Cx):
                 continue
             rew+=(np.exp((-1j*(A[i]-G[j])-ddef+(K_(i+numG,i+numG)+K_(j,j))/2-1/2*dinh*tim)*tim-g__*(CorrD[j,j]+CorrD[i+numG,i+numG]-CorrD[i+numG,j]-CorrD[j,i+numG])))*miumod[i][j]*bolc(G[j],G[0],T)
             #-np.conjugate(np.exp((-1j*(A[i]-G[j])-ddef-(K_(i+numG,i+numG)+K_(j,j))/2-1/2*dinh*tim)*tim-(gfun2(tim))*(CorrD[j,j]+CorrD[i+numG,i+numG]-CorrD[i+numG,j]-CorrD[j,i+numG])))
-    ft=np.fft.fftshift(np.fft.fft(rew)) 
+    ft=np.fft.fftshift(np.fft.fft(rew))
     length=np.shape(rew)[0]
     freq = np.fft.fftshift(np.fft.fftfreq(length, d=step/(2*np.pi)))
     return freq,ft,rew
@@ -444,18 +444,18 @@ def Cw(te,x,T,y0):
 def g_const(x,T,y0):
     return simps(y0/(2*np.pi*x**2)*ctan(x,T),x=x)#  2*np.trapz(Cw(tim3[ii],x0[1:],T,y0[1:]),x=x0[1:])
 @jit(cache=True)
-def g_lintime(x,T,y0): 
-    return simps(-y0/(2*np.pi*x)*1j,x=x)  
+def g_lintime(x,T,y0):
+    return simps(-y0/(2*np.pi*x)*1j,x=x)
 @jit(cache=True,nopython=True)
 def g_intcos(x,T,y0):
-    return -y0/(2*np.pi*x**2)*ctan(x,T) #(exp(+)+exp(-))/2   
+    return -y0/(2*np.pi*x**2)*ctan(x,T) #(exp(+)+exp(-))/2
 @jit(cache=True,nopython=True)
 def g_intsin(x,T,y0):
-    return  y0/(2*np.pi*x**2)*1j   #(exp(+)-exp(-))/2j  
+    return  y0/(2*np.pi*x**2)*1j   #(exp(+)-exp(-))/2j
 
-#    np.trapz(g_const)+np.trapz(g_lintime)*t+ 
+#    np.trapz(g_const)+np.trapz(g_lintime)*t+
 @jit(cache=True)
-def gnew(tim3,x,T,y0): 
+def gnew(tim3,x,T,y0):
     st=0.05
     cx_2 = np.arange(x[0],4000,st,np.float32)
     #print(np.shape(x)[0])
@@ -463,23 +463,23 @@ def gnew(tim3,x,T,y0):
     y0=np.concatenate((-y0[:0:-1],y0))
     g__3=np.zeros(len(tim3),dtype=np.complex64)
     g__3=g_const(x,T,y0) + g_lintime(x,T,y0)*tim3
-    
+
     cy_2=np.interp(cx_2,x,y0)
     #plt.plot(x,y0)
     x=cx_2
     y0=cy_2
     #y0[0]=0
     #x[0]=0.001
-    
-    
 
-    g_C=g_intcos(x,T,y0) 
+
+
+    g_C=g_intcos(x,T,y0)
     #g_C=np.concatenate((g_C[:0:-1],g_C))
-    g_S=g_intsin(x,T,y0) 
+    g_S=g_intsin(x,T,y0)
     #g_S=np.concatenate((g_S[:0:-1],g_S))
-    
+
   #  x2=np.concatenate((-x[::-1],x))
-    
+
     #g_C=np.interp()
     #g_C=np.interp()
 
@@ -496,7 +496,7 @@ def gnew(tim3,x,T,y0):
 
     mu=-np.real(g_fft_interp[0])/np.real(g__3[0])
     #print((g__3 + gg)[0],mu)
-    return (g__3 + g_fft_interp/mu) 
+    return (g__3 + g_fft_interp/mu)
 
 @jit
 def Cw_return(te,x,T,y0):
@@ -519,7 +519,7 @@ def propg(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim):
     decay=0
     for i in range(numG):
         GJ[i]=bolc(G[i],G[0],T)
-    miu_max=miumod.max()  
+    miu_max=miumod.max()
     for i in range(numE):
         for j in range(numG):
             if GJ[j]*miumod[i][j]/miu_max <1e-6:
@@ -537,7 +537,7 @@ def propg_numba(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim):
     for i in range(numG):
         GJ[i]=bolc(G[i],G[0],T)
     miu_max=miumod.max()
-    #CorrD=np.array(CorrD,np.complex64)  
+    #CorrD=np.array(CorrD,np.complex64)
     for i in range(numE):
         for j in range(numG):
             if GJ[j]*miumod[i][j]/miu_max <1e-6:

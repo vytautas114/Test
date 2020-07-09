@@ -41,7 +41,6 @@ parser.add_argument("S", type=float, help="Huang Rhys factor")
 parser.add_argument("Om", type=float, help="Frequency of mode, cm^-1")
 parser.add_argument("T", type=float, help="Temperature in kelvin")
 parser.add_argument("Nq", type=int, help="Number of allowed vibrational quanta in system")
-parser.add_argument("Kvv", type=float, help="Value of kvv coupling")
 parser.add_argument("-a", "--outp", type=str, default="")
 args = parser.parse_args()
 # answer = args.x**args.y
@@ -50,7 +49,6 @@ s = args.S
 om = args.Om
 T = args.T
 virpnum2 = args.Nq
-kvv = args.Kvv
 app_name = args.outp
 
 
@@ -59,9 +57,9 @@ app_name = args.outp
 # T=float(sys.argv[3])
 # virpnum2=int(sys.argv[4])
 fig, ax = plt.subplots(figsize=(8, 6))
-vardas = 'abs_vib_' + str(s) + '_' + str(om) + '_' + str(T) + 'K_' + str(virpnum2) + '_' + str(kvv) + '_' + app_name
+vardas = 'abs_vib_' + str(s) + '_' + str(om) + '_' + str(T) + 'K_' + str(virpnum2) + '_' + app_name
 print(vardas)
-spektras(ax, s, om, T, Kvsk=virpnum2, kvv=kvv, nam="BRC_scan/" + vardas)
+spektras(ax, s, om, T, Kvsk=virpnum2, nam="BRC_scan/" + vardas)
 ax.set_xlim([10000, 15000])
 
 
