@@ -427,12 +427,12 @@ def fourje(G,A,K_,gfun2,T,miumod,CorrD,Cy,Cx):
     return freq,ft,rew
 
 
-@jit(cache=True,nopython=True)
+@jit(cache=True)#,nopython=True
 def ctan(x,T):
     return (1+np.exp(-x/(T*0.695028)))/(1-np.exp(-x/(T*0.695028)))
 
 
-@jit#(cache=True,nopython=True)
+@jit(cache=True)#,nopython=True)
 def Cw(te,x,T,y0):
     #np.tanh(x/(2*T*0.695028))**(-1)
     #y=np.zeros(np.size(x0))
@@ -440,10 +440,10 @@ def Cw(te,x,T,y0):
 #   y[0]=0
     #return y
 
-@jit(cache=True)
+#@jit(cache=True)
 def g_const(x,T,y0):
     return simps(y0/(2*np.pi*x**2)*ctan(x,T),x=x)#  2*np.trapz(Cw(tim3[ii],x0[1:],T,y0[1:]),x=x0[1:])
-@jit(cache=True)
+#@jit(cache=True)
 def g_lintime(x,T,y0):
     return simps(-y0/(2*np.pi*x)*1j,x=x)
 @jit(cache=True,nopython=True)
@@ -454,7 +454,7 @@ def g_intsin(x,T,y0):
     return  y0/(2*np.pi*x**2)*1j   #(exp(+)-exp(-))/2j
 
 #    np.trapz(g_const)+np.trapz(g_lintime)*t+
-@jit(cache=True)
+# @jit(cache=True,forceobj=True)
 def gnew(tim3,x,T,y0):
     st=0.05
     cx_2 = np.arange(x[0],4000,st,np.float32)
@@ -512,24 +512,24 @@ def Cw_return(te,x,T,y0):
     return y_out
 
 
-@jit(cache=True)
-def propg(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim):
-    rew=np.zeros(len(tim),dtype=np.complex64)
-    GJ=np.zeros(numG)
-    decay=0
-    for i in range(numG):
-        GJ[i]=bolc(G[i],G[0],T)
-    miu_max=miumod.max()
-    for i in range(numE):
-        for j in range(numG):
-            if GJ[j]*miumod[i][j]/miu_max <1e-6:
-                continue
-            else:
-                rew+=(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2-decay)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG])))
-            -np.conjugate(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2-decay)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG])))))*miumod[i][j]*GJ[j]
-    return rew
+# @jit(cache=True)
+# def propg(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim):
+#     rew=np.zeros(len(tim),dtype=np.complex64)
+#     GJ=np.zeros(numG)
+#     decay=0
+#     for i in range(numG):
+#         GJ[i]=bolc(G[i],G[0],T)
+#     miu_max=miumod.max()
+#     for i in range(numE):
+#         for j in range(numG):
+#             if GJ[j]*miumod[i][j]/miu_max <1e-6:
+#                 continue
+#             else:
+#                 rew+=(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2-decay)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG])))
+#             -np.conjugate(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2-decay)*tim-np.einsum("ij,i->j", g__,(CorrD[:,j,j]+CorrD[:,i+numG,i+numG]-CorrD[:,i+numG,j]-CorrD[:,j,i+numG])))))*miumod[i][j]*GJ[j]
+#     return rew
 
-@jit(nopython=True,cache=True)
+@jit(cache=True)
 def propg_numba(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim):
     rew=np.zeros(len(tim),np.complex128)
     GJ=np.zeros(numG)
@@ -546,12 +546,13 @@ def propg_numba(numG,numE,G,A,T,miumod,K_,CorrD,g__,tim):
                 tem=np.zeros(len(tim),np.complex128)
                 for tk in range(len(g__[:,0])):
                     tem+=g__[tk]*(CorrD[tk,j,j]+CorrD[tk,i+numG,i+numG]-CorrD[tk,i+numG,j]-CorrD[tk,j,i+numG])
-                rew+=(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2-decay)*tim-tem)
-            -np.conjugate(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2-decay)*tim-tem)))*miumod[i][j]*GJ[j]
-    return rew
+                rew+=(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2-decay)*tim-tem))*miumod[i][j]*GJ[j]
+                #-np.conjugate(np.exp((-1j*(A[i]-G[j])+(K_[i+numG,i+numG]+K_[j,j])/2-decay)*tim-tem))
+    
+    return rew-rew.conjugate()
 
 
-@jit
+@jit(cache=True)
 def g33(tim3, x0, T, y0):
     g__3 = np.zeros(np.shape(tim3)[0], dtype=np.complex64)
     for ii in range(np.size(tim3)):
@@ -559,7 +560,7 @@ def g33(tim3, x0, T, y0):
     return g__3
 
 
-@jit
+@jit(cache=True)
 def g33_2(tim3, x0, T, y0):
     cwwww = Cw_return(tim3, x0, T, y0)
     g__3 = np.zeros(np.shape(tim3)[0], dtype=np.complex64)
@@ -569,7 +570,7 @@ def g33_2(tim3, x0, T, y0):
     return g__3
 
 
-@jit(cache=True)
+#@jit(cache=True,forceobj=True)
 def fourje2(G, A, K_, T, miumod, CorrD, Cy, Cx, snum):
     step = 0.0002
     numG = len(G)

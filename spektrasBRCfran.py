@@ -249,8 +249,8 @@ def spektras(ax, s0, om0, T, Kvsk=2, nam='BRC_scan/1td_test'):
             # tarp2=0
             if a==b:
             	raise SystemExit("should not be called in K_2. exiting")
-            if a>=numG and b>=numG and (A[a-numG]-A[b-numG]!=0):
-                tem=A[b-numG]-A[a-numG]
+            if a>=numG and b>=numG: #and np.abs(A[a-numG]-A[b-numG])!=0):
+                tem=A[b-numG]-A[a-numG] if np.abs(A[a-numG]-A[b-numG])>0.01 else 0.01
                 # if tem<0:
                 #     for n_spek in range(2):
                 #         tarp[n_spek]=np.interp(-tem,cxt[n_spek],cyt[n_spek])
@@ -259,26 +259,13 @@ def spektras(ax, s0, om0, T, Kvsk=2, nam='BRC_scan/1td_test'):
                 # else:
                 for n_spek in range(SDF_num):
                     tarp[n_spek]=np.interp(np.abs(tem),cxt[n_spek],cyt[n_spek])
-
-                    # tarp1=np.interp(tem,Cx,Cy)
-                    # tarp2=np.interp(tem,Cx2,Cy2)
-
-                # return np.abs((tarp1*CorrOffd[0,b,a]+tarp2*CorrOffd[1,b,a])*(np.tanh((tem)/(2*T*0.695028))**(-1)+1)) #if (A[a-numG]-A[b-numG])>om[0]-1 and (A[a-numG]-A[b-numG])<om[0]+1 else 0
                 return np.abs(np.dot(tarp[:],CorrOffd[:,b,a])*(np.tanh((tem)/(2*T*0.695028))**(-1)+1))
 
             elif a<numG and b<numG:
-                tem=G[b]-G[a]
-                # if tem<0:
-                #     tarp1=np.interp(-tem,Cx,Cy)
-                #     tarp2=np.interp(-tem,Cx2,Cy2)
-                # else:
-                #     tarp1=np.interp(tem,Cx,Cy)
-                #     tarp2=np.interp(tem,Cx2,Cy2)
+                tem=G[b]-G[a] if np.abs(G[a]-G[b])>0.01 else 0.01
                 for n_spek in range(SDF_num):
                     tarp[n_spek]=np.interp(np.abs(tem),cxt[n_spek],cyt[n_spek])
-
-                # return np.abs((tarp1*CorrOffd[0,b,a]+tarp2*CorrOffd[1,b,a])*(np.tanh((tem)/(2*T*0.695028))**(-1)+1)) if tem!=0 else 0 #if (G[a]-G[b])>om[0]-1 #and (G[a]-G[b])<om[0]+1 else 0
-                return np.abs(np.dot(tarp[:],CorrOffd[:,b,a])*(np.tanh((tem)/(2*T*0.695028))**(-1)+1)) if tem!=0 else 0
+                return np.abs(np.dot(tarp[:],CorrOffd[:,b,a])*(np.tanh((tem)/(2*T*0.695028))**(-1)+1))
             else:
                 return 0
 

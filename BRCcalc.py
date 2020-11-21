@@ -1,4 +1,4 @@
-#!/Users/student/Anaconda3/bin/python
+#!/home/vytautas/anaconda3/bin/python
 import matplotlib as mpl
 import argparse
 import matplotlib.pyplot as plt
